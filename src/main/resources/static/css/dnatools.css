@@ -1,0 +1,426 @@
+@import url("http://fonts.googleapis.com/css?family=Roboto:500,400|Droid+Sans+Mono");
+
+* {
+    -webkit-padding-start: 0px;
+    -moz-padding-start: 0px;
+}
+
+html {
+    -o-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.entrySeq {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+body {
+    font: 12px 'Roboto', Helvetica, Arial, sans-serif;
+    margin: 20px;
+}
+
+.command {
+    display: inline-block;
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.entryDNA { /*border around sequence*/
+    background-color: #ffffff;
+    border: 1px solid #3f51b5;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    margin-top: 5px;
+    margin-right: 220px;
+    padding: 0.1em 0.2em 0.2em 0.2em;
+    min-height: 0; /* support: IE7 */
+    word-wrap: break-word;
+}
+
+.entryDNA:hover {
+    border-color: #9fa8da;
+}
+
+.entryDNA.entrySelected {
+    border: 1px solid #9fa8da;
+    background: #c5cae9;
+}
+
+.entryAlignment { /*border around sequence*/
+    background-color: #ffffff;
+    border: 1px solid #8bc34a;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    margin-top: 5px;
+    margin-right: 220px;
+    padding: 0.1em 0.2em 0.2em 0.2em;
+    min-height: 0; /* support: IE7 */
+    word-wrap: break-word;
+}
+
+.entryAlignment:hover {
+    border-color: #aed581;
+}
+
+.entryAlignment.entrySelected {
+    border: 1px solid #aed581;
+    background: #c5e1a5;
+}
+
+.entryAA { /*border around sequence*/
+    background-color: #ffffff;
+    border: 1px solid #ff9800;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    margin-top: 5px;
+    margin-right: 220px;
+    padding: 0.1em 0.2em 0.2em 0.2em;
+    min-height: 0; /* support: IE7 */
+    word-wrap: break-word;
+}
+
+.entryAA:hover {
+    border-color: #ffcc80;
+}
+
+.entryAA.entrySelected {
+    border: 1px solid #ffcc80;
+    background: #ffe0b2;
+}
+
+.entryText { /*border around sequence*/
+    background-color: #ffffff;
+    border: 1px solid #795548;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    margin-top: 5px;
+    margin-right: 220px;
+    padding: 0.1em 0.2em 0.2em 0.2em;
+    min-height: 0; /* support: IE7 */
+    word-wrap: break-word;
+}
+
+.entryText:hover {
+    border-color: #bcaaa4;
+}
+
+.entryText.entrySelected {
+    border: 1px solid #bcaaa4;
+    background: #d7ccc8;
+}
+
+
+.entrySeq, .entryAlign { /*actual sequence; SVG*/
+    font-family: 'Droid Sans Mono', Courier, monospace;
+    font-size: 12px;
+}
+
+.info { /*sequence info*/
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    font-size: 1em;
+}
+
+.entryTitle { /*titel of sequence*/
+    display: inline;
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 2em;
+    margin-top: 0px;
+    padding: .0em .0em .0em .0em;
+}
+
+.stickyTitle {
+    position: relative;
+    z-index: 1;
+}
+
+.stickyTitle.fixed {
+    background: rgba(255, 255, 255, 0.9);
+    position: fixed;
+    top: 0;
+    z-index: 0;
+}
+
+.stickyTitle.fixed.absolute {
+    position: absolute;
+}
+
+#tools {
+    position: fixed;
+    top: 20px;
+    right: 10px;
+    width: 200px;
+}
+
+#navigator {
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    font-size: 100%;
+    position: fixed;
+    display: block;
+    top: 0px;
+    left: 0px;
+    width: 200px;
+    max-height: 100%;
+    background: white;
+    overflow: auto;
+    z-index: 3;
+}
+
+.navHidden {
+    border: 1px solid #9da2ce;
+    border-radius: 4px;
+}
+
+#navigator h3 {
+    cursor: pointer;
+    margin: 0;
+    padding: 3px;
+    font-weight: normal;
+}
+
+#sortable ul {
+    list-style: none;
+    margin: 0;
+    padding: 0
+}
+
+#sortable li {
+    background: white;
+    position: relative;
+    margin: 1px 0;
+    padding: 0px;
+    border: 1px solid gray;
+    list-style: none;
+    padding-left: 15px;
+    min-height: 16px
+}
+
+#sortable li .handle {
+    background: #f8f8f8;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    bottom: 0;
+    padding: 0;
+    margin-top: -8px;
+}
+
+#sortable .ui-selecting {
+    background: #eee;
+}
+
+#sortable .ui-selecting .handle {
+    background: #ddd;
+}
+
+#sortable li.liAA {
+    border: 1px solid #ff9800;
+}
+
+#sortable .liAA.ui-selected {
+    background: #ffe0b2;
+}
+
+#sortable li.liDNA {
+    border: 1px solid #3f51b5;
+}
+
+#sortable .liDNA.ui-selected {
+    background: #c5cae9;
+}
+
+#sortable li.liAlignment {
+    border: 1px solid #8bc34a;
+}
+
+#sortable .liAlignment.ui-selected {
+    background: #c5e1a5;
+}
+
+#sortable li.liText {
+    border: 1px solid #795548;
+}
+
+#sortable .liText.ui-selected {
+    background: #d7ccc8;
+}
+
+#sortable .ui-selected .handle {
+    background: #cde;
+}
+
+.command:hover {
+    color: #ffac12;
+}
+
+.mark9 {
+    background-color: orange;
+    color: white;
+    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+}
+
+.mark.color1 {
+    fill: yellow;
+}
+
+.mark.color2 {
+    fill: aqua;
+}
+
+.mark.color3 {
+    fill: greenyellow;
+}
+
+.mark.color4 {
+    fill: red;
+}
+
+.mark.color5 {
+    fill: orchid;
+}
+
+.mark.colorA1 {
+    fill: #FFFF00;
+}
+
+.mark.colorA2 {
+    fill: #F3F781;
+}
+
+.mark.colorA3 {
+    fill: #F5F6BB;
+}
+
+.annotation.color101 {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: black;
+    stroke-width: 1;
+    fill: white;
+}
+
+.annotation.color102 {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: #ffc107;
+    stroke-width: 1;
+    fill: #ffe57f;
+}
+
+.annotation.color103 {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: #259b24;
+    stroke-width: 1;
+    fill: #a2f78d;
+}
+
+.annotation.color104 {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: #03a9f4;
+    stroke-width: 1;
+    fill: #80d8ff;
+}
+
+.annotation.color105 {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: #e51c23;
+    stroke-width: 1;
+    fill: #f69988;
+}
+
+.annotation text {
+    fill: #000000;
+    stroke: none;
+}
+
+.help_text {
+    display: none;
+}
+
+.help {
+    display: inline-block;
+    color: lightskyblue;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.entryText table, th, td {
+    border: 1px solid lightgrey;
+    border-collapse: collapse;
+}
+
+#welcome-modal table, th, td {
+    border: 0;
+}
+
+.transl {
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 0.8em;
+    cursor: pointer;
+    stroke: black;
+    stroke-width: 0.8;
+    fill: #FFFFFF;
+}
+
+.transl .stop {
+    fill: #FF0000;
+}
+
+.transl .start {
+    fill: #00FF00;
+}
+
+.transl text {
+    fill: #000000;
+    stroke: none;
+}
+
+
+@media print {
+    #tools, #inputfield, #addSequences, #help, #navigator {
+        display: none;
+    }
+
+    #sequenceArea {
+        margin-left: 0px;
+    }
+
+    .entryDNA { /*border around sequence*/
+        margin-right: 0px;
+    }
+
+    .entryAlignment { /*border around sequence*/
+        margin-right: 0px;
+    }
+
+    .entryAA { /*border around sequence*/
+        margin-right: 0px;
+    }
+
+    .entryText { /*border around sequence*/
+        margin-right: 0px;
+    }
+}

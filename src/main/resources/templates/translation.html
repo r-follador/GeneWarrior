@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>GeneWarrior-Translation</title>
+        <link href='css/dnatools.css' rel='stylesheet' type='text/css'/>
+        <script src="js/jquery-1.11.0.js"></script>
+        <script src="js/dnatools_svg.js"></script>
+        <script>
+            var translHeight = 20;
+            var translMargin = 5;
+            var topMargin = 10;
+            var mousedownNuc = -1;
+            var mousedownFrame = -1;
+
+            var markedStart = -1;
+            var markedEnd = -1;
+
+            var sequence;
+            var seqSVG;
+            var trf = [];
+            var trf_ = [];
+
+            function initialize(data) {
+                $('#remove').remove();
+                $.post('dnatoolsServlet', {
+                    type: "translateWindow",
+                    translationTable: $('#translationTable', window.parent.document).val(),
+                    text: JSON.stringify(data)
+                })
+                    .done(function (responseText) {
+                            var output = $.parseJSON(responseText);
+                            if (output[0].type === 'error') {
+                                alert(output[0].error);
+                            } else {
+                                sequence = data;
+                                seqSVG = new sequenceSVG($('#transSVG'), sequence);
+                                seqSVG.charWidth = window.parent.document.getElementById('measureText').getComputedTextLength() / 12;
+                                seqSVG.belowHeight = (3 * translHeight) + translMargin;
+                                seqSVG.drawClassSpecific = function () {
+                                    var mainGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+                                    for (var j = 0; j < 3; j++) {
+                                        for (var i = 0; i < trf[j].length; i++) {
+                                            drawSinglTransl(mainGroup, i, j, trf[j][i], (trf_[j][i] === 'a'), (trf_[j][i] === 'b'));
+                                        }
+                                    }
+                                    seqSVG.svgID.find('.transl').append(mainGroup);
+                                };
+                                trf[0] = output[0].f1.split('');
+                                trf[1] = output[0].f2.split('');
+                                trf[2] = output[0].f3.split('');
+                                trf_[0] = output[0].tf1.split('');
+                                trf_[1] = output[0].tf2.split('');
+                                trf_[2] = output[0].tf3.split('');
+                                if (!$('#pluginModalInfo', window.parent.document).length) {
+                                    $('#plugin-modal', window.parent.document).parent().find('.ui-dialog-buttonpane').append("<p id='pluginModalInfo'></p>");
+                                }
+                                status("Click on codons to select start and end");
+                                var buttonEl = $('#plugin-modal', window.parent.document).parent().find('.ui-dialog-buttonset');
+                                buttonEl.append("<button type='button' class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only' role='button' aria-disabled='false' id='exportTranslation'><span class='ui-button-text'>Export selected</span></button>");
+                                $('#exportTranslation', window.parent.document).click(function () {
+                                    clickExport();
+                                });
+                                hideExport();
+
+                                redraw();
+                                updateSize();
+                            }
+                        }
+                    );
+            }
+
+            function redraw() {
+                seqSVG.svgID.find(".transl").empty();
+                seqSVG.redraw();
+            }
+
+            function updateSize() {
+                seqSVG.updateSize();
+            }
+
+            function hideExport() {
+                $('#exportTranslation', window.parent.document).hide();
+            }
+
+            function showExport() {
+                $('#exportTranslation', window.parent.document).show();
+            }
+
+            function status(text) {
+                $('#pluginModalInfo', window.parent.document).html(text);
+            }
+
+            $(function () {
+                $(window).resize(function () {
+                    updateSize();
+                });
+            });
+
+            function drawHighlightFrame(start, stop, frame) {
+                svg = seqSVG.svgID;
+                var lineheight = seqSVG.getLineheight();
+                var color = "blue";
+                var frameY;
+                var boxHeight;
+                boxHeight = translHeight;
+                frameY = 3 + topMargin + (frame * translHeight);
+                var s = seqSVG.getXY(start);
+                s.y += frameY;
+                var e = seqSVG.getXY(stop);
+                e.y += frameY;
+                if (s.y === e.y) {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "class", "highlight");
+                    block.setAttributeNS(null, "x", s.x);
+                    block.setAttributeNS(null, "y", s.y);
+                    block.setAttributeNS(null, "width", e.x + seqSVG.charWidth - s.x);
+                    block.setAttributeNS(null, "height", boxHeight);
+                    block.setAttributeNS(null, "fill", color);
+                    block.setAttributeNS(null, "fill-opacity", "0.5");
+                    svg.find('.forms').append(block);
+                } else {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "class", "highlight");
+                    block.setAttributeNS(null, "x", s.x);
+                    block.setAttributeNS(null, "y", s.y);
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth - s.x);
+                    block.setAttributeNS(null, "height", boxHeight);
+                    block.setAttributeNS(null, "fill", color);
+                    block.setAttributeNS(null, "fill-opacity", "0.5");
+                    svg.find('.forms').append(block);
+                    for (var i = s.y + lineheight; i < e.y; i += lineheight) {
+                        var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        block.setAttributeNS(null, "class", "highlight");
+                        block.setAttributeNS(null, "x", "0");
+                        block.setAttributeNS(null, "y", i);
+                        block.setAttributeNS(null, "width", seqSVG.svgWidth);
+                        block.setAttributeNS(null, "height", boxHeight);
+                        block.setAttributeNS(null, "fill", color);
+                        block.setAttributeNS(null, "fill-opacity", "0.5");
+                        svg.find('.forms').append(block);
+                    }
+
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "class", "highlight");
+                    block.setAttributeNS(null, "x", "0");
+                    block.setAttributeNS(null, "y", e.y);
+                    block.setAttributeNS(null, "width", e.x + seqSVG.charWidth);
+                    block.setAttributeNS(null, "height", boxHeight);
+                    block.setAttributeNS(null, "fill", color);
+                    block.setAttributeNS(null, "fill-opacity", "0.5");
+                    svg.find('.forms').append(block);
+                }
+            }
+
+            function getNucPosition(x, y) {
+                var lineheight = seqSVG.getLineheight();
+
+                var p = seqSVG.getNucPosition(x, y);
+                if (p === null)
+                    return null;
+                var frame;
+                if ((lineheight - (y % lineheight)) >= (3 * translHeight))
+                    frame = -1;
+                else
+                    frame = 2 - Math.floor((lineheight - (y % lineheight)) / translHeight);
+                return {nuc: p, frame: frame};
+            }
+
+            function drawSinglTransl(mainGroup, pos, frame, amino, isStart, isStop) {
+                var arrowHeight = translHeight;
+                var s = seqSVG.getXY((pos * 3) + frame);
+                s.y += ((frame + 1) * translHeight) + translHeight + translMargin;
+                var e = seqSVG.getXY((pos * 3) + frame + 2);
+                e.y += ((frame + 1) * translHeight) + translHeight + translMargin;
+                var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                if (isStart) {
+                    group.setAttributeNS(null, "class", "start");
+                } else if (isStop) {
+                    group.setAttributeNS(null, "class", "stop");
+                }
+
+                if (s.y === e.y) {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    block.setAttributeNS(null, "points", (e.x + seqSVG.charWidth) + "," + (e.y - seqSVG.fontHeight - (arrowHeight / 2)) + " " + (e.x) + "," + (e.y - seqSVG.fontHeight - arrowHeight) + " " + s.x + "," + (s.y - seqSVG.fontHeight - arrowHeight) + " " + s.x + "," + (s.y - seqSVG.fontHeight) + " " + (e.x) + "," + (e.y - seqSVG.fontHeight));
+                    group.appendChild(block);
+                    var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttributeNS(null, "x", s.x + 3);
+                    text.setAttributeNS(null, "y", (e.y - seqSVG.fontHeight - 5));
+                    text.appendChild(document.createTextNode(amino));
+                    group.appendChild(text);
+                } else {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    block.setAttributeNS(null, "points", (e.x + seqSVG.charWidth) + "," + (e.y - seqSVG.fontHeight - (arrowHeight / 2)) + " " + (e.x) + "," + (e.y - seqSVG.fontHeight - arrowHeight) + " -10," + (e.y - seqSVG.fontHeight - arrowHeight) + " -10," + (e.y - seqSVG.fontHeight) + " " + (e.x) + "," + (e.y - seqSVG.fontHeight));
+                    group.appendChild(block);
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "x", s.x);
+                    block.setAttributeNS(null, "y", s.y - seqSVG.fontHeight - arrowHeight);
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth + 10);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    group.appendChild(block);
+                    var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttributeNS(null, "x", s.x + 3);
+                    text.setAttributeNS(null, "y", (s.y - seqSVG.fontHeight - 3));
+                    text.appendChild(document.createTextNode(amino));
+                    group.appendChild(text);
+                }
+                mainGroup.appendChild(group);
+            }
+
+            $(document).ready(function () {
+                $('#transSVG').on("mousemove", function (event) {
+                    seqSVG.removeHighlight();
+                    var x = event.pageX - $(this).offset().left;
+                    var y = event.pageY - $(this).offset().top;
+                    var pos = getNucPosition(x, y);
+
+                    if (mousedownNuc === -1 && markedStart === -1) { //nothing selected
+                        if (pos === null) {
+                            status("");
+                            return;
+                        }
+
+                        if (pos.frame === -1) {
+                            status("Nucleotide " + (pos.nuc + 1));
+                        } else {
+                            var start = pos.nuc - ((pos.nuc - pos.frame) % 3);
+                            var codon = Math.floor((pos.nuc - pos.frame) / 3);
+                            seqSVG.drawHighlight(start, start + 2);
+                            drawHighlightFrame(start, start + 2, pos.frame);
+                            status("Codon on Frame " + (pos.frame + 1) + " (Nucleotide " + (start + 1) + "-" + (start + 3) + ") " + sequence.sequence.substring(start, start + 3) + ">" + (trf_[pos.frame][codon] === 'b' ? "STOP" : (trf[pos.frame][codon] + (trf_[pos.frame][codon] === 'a' ? " [START]" : ""))) + "<br>Click on start codon to select protein");
+                        }
+                    } else if (markedStart !== -1) { //start and stop is already selected
+                        seqSVG.drawHighlight(markedStart, markedEnd, -1);
+                        drawHighlightFrame(markedStart, markedEnd, (markedStart % 3));
+                        status("Selection " + (markedStart + 1) + "-" + (markedEnd + 1) + " nt: " + ((markedEnd - markedStart + 1) / 3) + " aa");
+                    } else { //only start is selected
+                        var start = mousedownNuc;
+                        var end = pos.nuc - ((pos.nuc - mousedownFrame) % 3) + 2;
+
+                        if (start > end) {
+                            var b = start;
+                            start = end;
+                            end = b;
+                            end += 2;
+                            start -= 2;
+                        }
+                        var codon = Math.floor((pos.nuc - mousedownFrame) / 3);
+                        drawHighlightFrame(start, end, mousedownFrame);
+                        status("Frame " + mousedownFrame + " Nt " + (start + 1) + "-" + (end + 1) + ": " + ((end - start + 1) / 3) + " aa<br>Click on End codon to select protein");
+                    }
+                }).on("click", function (event) {
+                    if (!(event.shiftKey || event.ctrlKey)) { //normal click, shift key or ctrl key is not pressed
+                        seqSVG.removeHighlight();
+                        var x = event.pageX - $(this).offset().left;
+                        var y = event.pageY - $(this).offset().top;
+                        var pos = getNucPosition(x, y);
+                        if (pos === null) {
+                            mousedownNuc = -1;
+                            mousedownFrame = -1;
+                            markedStart = -1;
+                            markedEnd = 1;
+                            hideExport();
+                            return;
+                        }
+
+                        if (mousedownNuc === -1) {//start codon not yet selected
+                            if (pos.frame >= 0) { //click on frame
+                                mousedownNuc = pos.nuc - ((pos.nuc - pos.frame) % 3);
+                                mousedownFrame = pos.frame;
+                                markedStart = -1;
+                                markedEnd = -1;
+                                drawHighlightFrame(mousedownNuc, mousedownNuc + 2, mousedownFrame);
+                                status("Start codon selected");
+                            } else { //click on nucs
+                                mousedownNuc = -1;
+                                mousedownFrame = -1;
+                                markedStart = -1;
+                                markedEnd = -1;
+                            }
+                            hideExport();
+                        } else { //start codon already selected
+                            markedStart = mousedownNuc;
+                            markedEnd = pos.nuc - ((pos.nuc - mousedownFrame) % 3) + 2;
+                            if (markedStart > markedEnd) {
+                                var b = markedStart;
+                                markedStart = markedEnd - 2;
+                                markedEnd = b + 2;
+                            }
+                            mousedownNuc = -1;
+                            mousedownFrame = -1;
+                            drawHighlightFrame(markedStart, markedEnd, (markedStart % 3));
+                            status("End codon selected: " + ((markedEnd - markedStart + 1) / 3) + " aa");
+                            showExport();
+                        }
+                    } else { //shift key is pressed
+                        seqSVG.removeHighlight();
+                        var x = event.pageX - $(this).offset().left;
+                        var y = event.pageY - $(this).offset().top;
+                        var pos = getNucPosition(x, y);
+                        if (pos === null) {
+                            mousedownNuc = -1;
+                            mousedownFrame = -1;
+                            markedStart = -1;
+                            markedEnd = 1;
+                            hideExport();
+                            return;
+                        }
+                        if (pos.frame < 0) {
+                            return;
+                        }
+                        var codon = Math.floor((pos.nuc - pos.frame) / 3);
+                        var endC;
+                        for (endC = codon; endC < trf_[pos.frame].length; endC++) {
+                            if (trf_[pos.frame][endC] === 'b')
+                                break;
+                        }
+                        var startC = -1;
+                        for (var o = codon; o > -1; o--) {
+                            if (trf_[pos.frame][o] === 'b')
+                                break;
+                            if (trf_[pos.frame][o] === 'a')
+                                startC = o;
+                        }
+
+                        if (endC >= trf_[pos.frame].length || startC === -1 || endC === startC) {
+                            status("Could not extend this ORF");
+                            return;
+                        }
+                        markedStart = startC * 3 + pos.frame;
+                        markedEnd = endC * 3 + pos.frame + 2;
+                        drawHighlightFrame(markedStart, markedEnd, pos.frame);
+                        seqSVG.drawHighlight(markedStart, markedEnd);
+                        showExport();
+                    }
+                });
+            });
+
+            function clickExport() {
+                if (markedStart === -1 || markedEnd === -1) {
+                    return;
+                }
+                $.post('dnatoolsServlet', {
+                    type: "translate",
+                    translationTable: $('#translationTable', window.parent.document).val(),
+                    start: markedStart,
+                    end: markedEnd,
+                    text: JSON.stringify(sequence)
+                })
+                    .done(function (responseText) {
+                        var newSequences = $.parseJSON(responseText);
+                        for (var i = 0; i < newSequences.length; i++) {
+                            if (newSequences[i].type === 'aa') {
+                                parent.addSequencesFromResponse(responseText, 'response');
+                                status("Protein sequence has been imported to your project");
+                                seqSVG.removeHighlight();
+                                mousedownNuc = -1;
+                                mousedownFrame = -1;
+                                markedStart = -1;
+                                markedEnd = -1;
+                                hideExport();
+                            } else if (newSequences[i].type === 'error') {
+                                parent.alert2(newSequences[i].error);
+                            }
+                        }
+                    })
+                    .fail(function (responseText) {
+                        parent.alert2("Failed contacting server:" + responseText);
+                    });
+            }
+        </script>
+    </head>
+
+<body>
+<a id="remove" href="index">Go to main site</a>
+<svg id='transSVG' class='entrySeq' width="100%" height="300">
+    <g class="transl"></g>
+    <g class="forms"></g>
+    <g class="seqs"></g>
+</svg>
+</body>
+</html>

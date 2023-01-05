@@ -1,0 +1,51 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>What is Translation?</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h1>What is Translation?</h1>
+<p>See also <a href="tut_translation.html">how to translate DNA to protein</a>.</p>
+Translation is the process where ribosomes create proteins by decoding nucleotide sequences. A single amino acid is
+encoded by three nucleotides (<i>codon</i>). The translation step from codon to amino acid (which codon encodes which
+amino acid) is determined by the <i>genetic code</i> (or <i>translation table</i>) that may slightly differ among
+different species.<br>
+Every nucleotide sequence can be translated in three different ways, depending on the starting position.<br>
+The first codon of the sequence <code>GGGTTT</code> can either be <code>GGG</code>, <code>GGT</code> or <code>GTT</code>,
+depending on whether the codon starts on position 1,2 or 3. These are called the three <i>reading frames</i>, and they
+result in three distinctly different protein sequences.<br>
+<img src="pics/exp_translation_1.png"><br>
+Translation starts with a specific initiation codon, commonly <code>AUG</code> (the <i>start codon</i>). Furthermore,
+translation is terminated by a <i>stop codon</i>.
+
+<h2>Genetic Code (or Translation Table)</h2>
+The genetic code is a set of rules on how a codon (three nucleotides) is translated to an amino acid. The default is the
+Standard code, which almost universal.<br>
+The genetic code can be depicted as a Codon Wheel (from <a
+        href="http://commons.wikimedia.org/wiki/File:Codons_aminoacids_table.png" target="_blank">Wikipedia</a>):<br>
+<img src="pics/exp_translation_2.png"><br>
+The inner circle depicts the first nucleotide in the codon, the second ring the second nucleotide and the outermost ring
+the third nucleotide. U stands for Uridine, which is interchangeable with T (Thymidine).
+<p>However, depending on the phylogenetic clade there are some differences in the code, which mostly apply to start and
+    stop codons.<br>
+    For example, in the Genetic Code of the Mitochondrion, the <code>TGA</code>-codon encodes a tryptophan (W) instead
+    of the stop codon in the standard genetic code.<br>
+    To see the complete list of all currently known genetic codes, see <a
+            href="http://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/index.cgi" target="_blank">NCBI's list</a>.
+</p>
+
+<h2>Open reading frames (ORF)</h2>
+An ORF is a DNA sequence which starts with a start codon and is not interrupted by stop codon until the last codon. An
+ORF is thus a candidate for a protein encoding gene.
+<p>For more information about the biological details of the translation process, see <a
+        href="http://www.nature.com/scitable/topicpage/translation-dna-to-mrna-to-protein-393" target="_blank">the well
+    written and illustrated article from Nature.com</a>.</p>
+<p>See the <a href="tut_translation.html">Tutorial</a> on how to translate DNA to protein.</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

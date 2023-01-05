@@ -1,0 +1,52 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>Analyze alignments</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>Alignment analysis</h2>
+<p>See also <a href="tut_analyzealignment.html">How to analyze Alignments</a>.</p>
+<h3>Consensus sequence</h3>
+<p>
+    The <i>Consensus sequence</i> is the most frequent letter (nucleotide or amino acid) for each column. For protein
+    alignments, in the case of a tie (two
+    or more aminoacids are equally frequent) an X (any amino acid) is chosen as consensus. For DNA alignments, in the
+    case of a tie of two
+    nucleotides the matching ambigous nucleotide is chosen, in the case of three or more equally frequence nucleoties an
+    N (any nucleotide) is chosen as consensus.
+</p>
+<h3>Phylogenetic tree</h3>
+<p>
+    Phylogenetic trees visualize the evolutionary relationship of the sequences in an alignment.<br>
+    The <a href="http://www.drive5.com/muscle/" target="_blank">MUSCLE alignment software</a> and its
+    <code>-maketree</code> option are used to generate a UPGMA tree.<br>
+    Be aware that this approach allows an approximate idea about the evolutionary relationship of the sequences,
+    but does not substitute a high-quality phylogenetic tree.
+</p>
+<h3>Sequence logo</h3>
+<p>
+    Sequence logos visualize sequence conservation of alignments. Each column in the alignment is depicted as a stack.
+    The total height of the stack symbolizes
+    the conservation; the height of a single letter in the stack symbolizes the frequency of this letter.
+    The y-axis represents the information content in bits.<br>
+    The <a href="http://weblogo.threeplusone.com/" target="_blank">WebLogo 3-Software</a> is used to generate
+    Sequence logos.
+</p>
+<h4>References</h3>
+    <p>
+        <a href="http://nar.oxfordjournals.org/cgi/reprint/32/5/1792" target="_blank">Edgar,
+            R.C. (2004) MUSCLE: multiple sequence alignment with high accuracy and
+            high throughput. <em>Nucleic Acids Res</em>. <b>32</b>(5):1792-1797</a><br><br>
+
+        <a href="http://genome.cshlp.org/content/14/6/1188.long" target="_blank">Crooks GE, Hon G, Chandonia JM, Brenner
+            SE WebLogo: A sequence logo generator,
+            <em>Genome Research</em>, <b>14</b>:1188-1190, (2004)</a>
+    </p>
+    <p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

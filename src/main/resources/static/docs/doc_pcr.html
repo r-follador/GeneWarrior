@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>PCR</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>PCR (Polymerase chain reaction)</h2>
+<p>See also <a href="tut_primerdesign.html">How to design Primers for PCR</a> and the <a
+        href="http://youtu.be/Tt5Lo7cTSK0" target="_blank">YouTube tutorial</a>.</p></p>
+This command is only valid for DNA sequences. GeneWarrior uses the Primer3 software (see references below) for Primer
+design and Tm (melting
+temperature) calculation.
+<p>
+<h3>Primer design</h3>
+Select a single DNA sequence as PCR template and click on "<i>Primer design</i>".<br><br>
+<b><i>Set Rules</i></b><br>
+Define a PCR <i>target</i> by selecting the sequence using your mouse and clicking on "<i>Set Target</i>".
+Primers will be created to flank the target. However, they cannot overlap it.<br>
+No Primers and Probes will be created on regions which are marked as <i>Exluded</i>. It makes sense to
+exclude regions which have low sequence quality (e.g. the beginning of a Sanger sequence) or contain
+repetitive elements.<br>
+Regions are excluded by selecting the sequence using your mouse and clicking on "<i>Set as Exclusion</i>".
+Multiple regions can be excluded.<br>
+By using the "<i>Force Primer to start at Position</i>"-option, the 5&prime;-end of the respective primer is
+forced to start at the specified position. This of course limits the software to only choose the length of
+the primer to satisfy your further constraints such as GC-content and melting temperature.<br>
+If both Left and Right primer positions are forced to a location, no target is necessary.
+<br><br>
+<b><i>Set Parameters</i></b><br>
+This section allows you to set the parameters for the primer design and primer properties.<br>
+<i>Product size</i>: The minimum and maximum length of your PCR product (this includes the primers on both ends).
+The bigger the range, the more options the software has to choose from possible primers. [This parameter corresponds to
+PRIMER_PRODUCT_SIZE_RANGE in Primer3]<br>
+<i>Primer size</i>: The minimum, optimum and maximum length of the chosen primers. The maximum is 35bp. [These
+parameters correspond to PRIMER_MAX_SIZE etc. in Primer3]<br>
+<i>Primer melting temperature</i>: The minimum, optimum and maximum melting temperature (Tm) in °C. The melting
+temperatures are computed according to SantaLucia, 1998 (see below) [These parameters correspond to PRIMER_MAX_TM etc.
+in Primer3]<br>
+<i>Primer GC content</i>: The minimum, optimum and maximum GC content of the chosen primers (in %). [These parameters
+correspond to PRIMER_MAX_GC_PERCENT etc. in Primer3]<br>
+<i>Salt concentration</i>: The concentration of monovalent salt cations in the PCR (usually KCl) in millimolar (mM).
+[This parameter corresponds to PRIMER_SALT_MONOVALENT in Primer3]<br>
+<i>DNA concentration</i>: The concentration of annealing oligos in the course of the PCR (in nanomolar (nM). [This
+parameter corresponds to PRIMER_DNA_CONC in Primer3]<br>
+<br>
+<b><i>Hybridization Probe</i></b><br>
+This option creates an additional oligo probe which binds on the PCR product itself. This is used
+for qPCR/Real-time PCR.<br>
+The options are the same as above, but apply only to the probe reaction.
+<br><br>
+<b><i>Choose Primers</i></b><br>
+If you selected a Target and chose your proper parameters, click on "<i>Calculate Primers</i>".<br>
+The software will create up to five primer pair suggestions to choose from. If your parameters are too stringent
+to allow for primer design, an error message will detail on which step the software failed.<br>
+If everything is okay, you can inspect the primer pair suggestions using the drop-down box. The primers are
+drawn into the sequence and the primer details such as melting temperature, positions etc. are displayed.<br>
+To select a chosen primer pair, click on "<i>Export this Pair</i>". The window will close and the PCR details
+are imported into your project.<br>
+To check your chosen primer pair for unintended products, click on "<i>NCBI PrimerBLAST</i>". This opens NCBI
+PrimerBLAST using your template and primer pair. Use the Primer Pair Specifity Checking Parameters to check for
+possible mismatches of your primer pair to the genome or transcriptome of your species.
+</p>
+<p><b>Reference</b><br>
+    SantaLucia JR (1998) "A unified view of polymer, dumbbell and oligonucleotide DNA nearest-neighbor thermodynamics",
+    Proc Natl Acad Sci 95:1460-65<br><br>
+    Steve Rozen and Helen J. Skaletsky (2000) Primer3 on the WWW for general users and for biologist programmers. In:
+    Krawetz S, Misener S (eds) Bioinformatics Methods and Protocols: Methods in Molecular Biology. Humana Press, Totowa,
+    NJ, pp 365-386 <a href="http://sourceforge.net/projects/primer3/" target="_blank">Download software</a>
+</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

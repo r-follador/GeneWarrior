@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description"
+          content="Online DNA and Protein Sequence Tools, Alignments, Reverse complement, Translation, Sequence annotation, design Primers">
+    <title>GeneWarrior - DNA and Protein Sequence Manipulation Tools and Primer Design</title>
+    <link href="/css/smoothness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+    <script src="/js/jquery-1.11.0.js"></script>
+    <script src="/js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="/js/json2.js"></script>
+    <script src="/js/dnatools_svg.js"></script>
+    <script src="/js/dnatools.js"></script>
+
+    <link href='/css/dnatools.css' rel='stylesheet' type='text/css'/>
+
+</head>
+<body>
+
+<div id="logo"><img alt="GeneWarrior" src="/css/genewarrior_mansgoggel.png"><img
+        alt="DNA Reverse complement, PCR Primer design, multiple alignment, sequence logo"
+        src="css/genewarrior_dnatools.png">
+    <div class="help" onclick="showDoc('docs/index.html');">{Help}</div>
+</div>
+<noscript>
+    <h2>This web app makes heavy use of JavaScript. Please enable it or update your browser.</h2>
+</noscript>
+<div id="tools">
+    <textarea id="ignore2" style="resize: none;outline:none;border:0px;height:1px;width:1px;"></textarea>
+    <span id="selectCount">none selected</span>
+    <div class="help" onclick="showDoc('docs/doc_selecting.html');">?</div>
+    <br>
+    <div class="command" id="deleteSelected" title="Delete selected Entries">Delete selected</div>
+    <br>
+    <div id="accordion">
+        <h3>Reverse Complement
+            <div class="help" onclick="showDoc('docs/doc_reversecomplement.html');">?</div>
+        </h3>
+        <div>
+            <p>
+            <div class="command" id="ReverseComplement" title="Get the reverse complement of the selected sequences">
+                Reverse Complement
+            </div>
+            <br>
+            <div class="command" id="Reverse" title="Get the reverse sequence of the selected sequences">Reverse only
+            </div>
+            <br>
+            <div class="command" id="Complement" title="Get the complement sequence of the selected sequences">
+                Complement only
+            </div>
+            </p>
+        </div>
+        <h3>Translation
+            <div class="help" onclick="showDoc('docs/doc_translation.html');">?</div>
+        </h3>
+        <div>
+            <p>
+                <select id="translationTable">
+                    <option th:each="i : ${#numbers.sequence(1, 24)}" th:value="${i}"
+                            th:title="${aa.translationTableDescription[i]}"
+                            th:text="${aa.translationTableDescription[i]}"></option>
+                </select>
+            </p>
+            <p>
+            <div class="command" id="showTranslation" title="Show all possible translation frames">Show all frames</div>
+            </p>
+            <p style="margin-bottom: 0px;">
+                Translate directly:
+            <table cellspacing="0">
+                <col width="80px"/>
+                <tr>
+                    <td>
+                        <div class="command" id="TranslateF1" title="Frame 1 Forward">Forward 1</div>
+                    </td>
+                    <td>
+                        <div class="command" id="TranslateR1" title="Frame 1 Reverse">Reverse 1</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="command" id="TranslateF2" title="Frame 2 Forward">Forward 2</div>
+                    </td>
+                    <td>
+                        <div class="command" id="TranslateR2" title="Frame 2 Reverse">Reverse 2</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="command" id="TranslateF3" title="Frame 3 Forward">Forward 3</div>
+                    </td>
+                    <td>
+                        <div class="command" id="TranslateR3" title="Frame 3 Reverse">Reverse 3</div>
+                    </td>
+                </tr>
+            </table>
+            </p>
+            <p>
+            <div class="command" id="longestOrf" title="Calculate the longest Open Reading Frame">Best guess</div>
+            </p>
+        </div>
+        <h3>BLAST
+            <div class="help" onclick="showDoc('docs/doc_blast.html');">?</div>
+        </h3>
+        <div>
+            <p>
+            <div class="command" title="Send DNA sequences to NCBIs BLAST" id="BlastnNCBI">NCBI BLAST for DNA</div>
+            <div class="command" title="Send protein sequences to NCBIs BLAST" id="BlastpNCBI">NCBI BLAST for Proteins
+            </div>
+            </p>
+        </div>
+        <h3>Marked Sequence
+            <div class="help" onclick="showDoc('docs/doc_marking.html');">?</div>
+        </h3>
+        <div>
+            <p style="margin-bottom: 0px;">
+                Color:<br>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;cursor:pointer;">
+                    <rect id="highlight1" class="mark color1" x="0" y="0" width="20" height="20" rx="4" ry="4">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;cursor:pointer;">
+                    <rect id="highlight2" class="mark color2" x="0" y="0" width="20" height="20" rx="4" ry="4">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;cursor:pointer;">
+                    <rect id="highlight3" class="mark color3" x="0" y="0" width="20" height="20" rx="4" ry="4">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;cursor:pointer;">
+                    <rect id="highlight4" class="mark color4" x="0" y="0" width="20" height="20" rx="4" ry="4">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;cursor:pointer;">
+                    <rect id="highlight5" class="mark color5" x="0" y="0" width="20" height="20" rx="4" ry="4">
+                </svg>
+                <br>
+            <div class="command" id="NoFormattingColor">Remove color</div>
+            </p>
+            <p>
+                Annotate:<br>
+                <input style="display:inline-block" id="annotateText" type="text" size="20" placeholder="Enter text"
+                       maxlength="100">
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;">
+                    <polygon id="annotatio101" class="annotation color101" points="0,0 15,0 20,7 15,14 0,14">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;">
+                    <polygon id="annotatio102" class="annotation color102" points="0,0 15,0 20,7 15,14 0,14">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;">
+                    <polygon id="annotatio103" class="annotation color103" points="0,0 15,0 20,7 15,14 0,14">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;">
+                    <polygon id="annotatio104" class="annotation color104" points="0,0 15,0 20,7 15,14 0,14">
+                </svg>
+                <svg style="display:block;float:left;width:20px;height:20px;margin-right:5px;">
+                    <polygon id="annotatio105" class="annotation color105" points="0,0 15,0 20,7 15,14 0,14">
+                </svg>
+                <br>
+            <div class="command" id="NoFormattingAnnotation">Remove annotation</div>
+            </p>
+            <p>
+            <div class="command" id="getSubsequence">Extract selected sequence</div>
+            </p>
+        </div>
+        <h3>Find
+            <div class="help" onclick="showDoc('docs/doc_find.html');">?</div>
+        </h3>
+        <div>
+            <p>
+            <div id="radioset">
+                <input type="radio" id="findRadio1" name="typefind" checked="checked"><label
+                    for="findRadio1">DNA</label>
+                <input type="radio" id="findRadio2" name="typefind"><label for="findRadio2">Protein</label>
+            </div>
+            <input style="display:inline-block" id="findText" type="text" size="20" placeholder="Enter sequence">
+            <br><span id="findBothStrands"><input type="checkbox" id="findCheck" checked>Both strands</span><br>
+            <span class="command" id="findButton">Search</span> <span class="command" id="findCancel">Reset</span>
+            </p>
+            <p>
+            <div style="display:inline-block" class="ui-state-default ui-corner-all" title="Delete entry"
+                 id="findHitBack"><span class="ui-icon ui-icon-triangle-1-w" onclick="findHitBack();"></span></div>
+            <div style="display:inline-block" class="ui-state-default ui-corner-all" title="Delete entry"
+                 id="findHitForward"><span class="ui-icon ui-icon-triangle-1-e" onclick="findHitForward();"></span>
+            </div>
+            <div style="display:inline-block" id="findHits"></div>
+            </p>
+        </div>
+        <h3>Create Alignment
+            <div class="help" onclick="showDoc('docs/doc_createalignment.html');">?</div>
+        </h3>
+        <div>
+            <p>
+                Align two sequences (Pairwise):<br>
+            <div class="command" id="PairwiseCostFreeEnds" title="Cost free end alignment">Full sequence</div>
+            <br>
+            <!--/* <div class="command" id="PairwiseGlobal" title="Global alignment">Entire sequence (Global)</div> */-->
+            <div class="command" id="PairwiseLocal" title="Local alignment">Highest similarity region</div>
+            </p>
+            <p>
+                Align several sequences (MSA):<br>
+            <div class="command" id="MuscleAlignment" title="Align multiple sequences using MUSCLE">MUSCLE</div>
+            <br>
+            </p>
+        </div>
+        <h3>Analyze Alignment
+            <div class="help" onclick="showDoc('docs/doc_analyzealignment.html');">?</div>
+        </h3>
+        <div>
+            <div class="command" id="AlignmentConsensus" title="Create a consensus sequence of an alignment">Consensus
+                sequence
+            </div>
+            <br>
+            <div class="command" id="AlignmentTree" title="Create a phylogenetic tree of an alignment">Phylogenetic
+                Tree
+            </div>
+            <br>
+            <div class="command" id="AlignmentLogo" title="Graphical representation of multiple sequence alignment">
+                Sequence logo
+            </div>
+            <br>
+        </div>
+        <h3>PCR
+            <div class="help" onclick="showDoc('docs/doc_pcr.html');">?</div>
+        </h3>
+        <div>
+            <p>
+            <div class="command" id="selectPrimer" title="Create primers on chosen sequence">Primer design</div>
+            </p>
+        </div>
+        <h3>Share &amp; Export
+            <div class="help" onclick="showDoc('docs/doc_export.html');">?</div>
+        </h3>
+        <div>
+            <p>
+            <div class="command" id="shareProject" title="Generate Link to share project">Share project</div>
+            </p>
+            <p>
+            <div class="command" id="ExportFastaSequences">Save Sequences as FASTA</div>
+            <br>
+            <div class="command" id="ExportClustalAlignments">Save Alignments as CLUSTAL</div>
+            <br>
+            <div class="command" id="ExportHTML">Save as static HTML</div>
+            <br>
+            <div class="command" id="ExportPrint">Print</div>
+            </p>
+        </div>
+    </div>
+    <div id="loadSpinner"><img src="css/ajax-loader.gif">Hard at work...</div>
+    Help improve GeneWarrior! Send feedback, feature requests and bug reports to <a
+        href="mailto:contact@genewarrior.com">contact@genewarrior.com</a>
+</div>
+<div id="sequenceArea"></div>
+<div class="stickyTitle"></div>
+<div id="footer">
+    <textarea id="inputfield" cols="100" rows="5" maxlength="100000" autofocus="true"
+              placeholder="Enter your DNA and Protein sequences directly or as FASTA"></textarea><br>
+    <button id="addSequences">Add</button>
+    <div class="help" onclick="showDoc('docs/doc_sequenceimport.html');">?</div>
+    <div style="display:inline-block;margin-left: 10px;" class="command" id="loadExample">Load Example</div>
+</div>
+<div id="welcome-modal" title="GeneWarrior"></div>
+<div id="plugin-modal" title=""></div>
+<div id="help-modal" title="Help"></div>
+<div id="alert-modal" title="Alert"></div>
+<div id="popUpMenu"></div>
+<svg class="entrySeq" id="ignore" width="1px" height="1px">
+    <text id="measureText" x="0" y="10" fill="white">AGCTAGCTAGCT</text>
+</svg>
+<div id="navigator" class="navHidden" style="display:none">
+    <h3><span id="navArrow" class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-w"
+              style="display:inline-block;float:right"></span> Project Navigator</h3>
+    <ul style="display:none" id="sortable">
+    </ul>
+</div>
+<script th:if="${link}" type="text/javascript">loadFromDatabase([(${link})]);</script>
+<script th:unless="${link}" type="text/javascript">welcomeWindow();</script>
+</body>
+</html>

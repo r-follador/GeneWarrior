@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>GeneWarrior-Translation</title>
+        <link href='/css/dnatools.css' rel='stylesheet' type='text/css'/>
+        <link href="/css/smoothness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+        <script src="/js/jquery-1.11.0.js"></script>
+        <script src="/js/jquery-ui-1.10.3.custom.min.js"></script>
+        <script src="/js/dnatools_svg.js"></script>
+        <script>
+            var seqs;
+
+            function initialize(data) {
+                seqs = data;
+                $('#remove').remove();
+                $('#interaction').show();
+            }
+
+            function createLink() {
+                if (seqs === null || seqs === "") {
+                    alert("Your project is empty.");
+                    return;
+                }
+                $('#createButton').remove();
+                $('#interaction').append("<p id='inProgress'><img src=\"/css/ajax-loader.gif\">Sending project to database...</p>");
+                $.ajax({
+                    url: 'dnatoolsServlet',
+                    data: {type: "share", text: seqs},
+                    type: 'POST'
+                })
+                    .done(function (responseText) {
+                        var answer = $.parseJSON(responseText);
+                        if (answer[0].type === 'error') {
+                            $('#inProgress').remove();
+                            $('#interaction').append("<br><span style=\"color: #cd0a0a\"><span class=\"ui-icon ui-icon-alert\" style=\"float: left; margin-right: .3em;\"></span> Error: " + answer[0].error + "</span><p>Try again or contact <a href=\"mailto:contact@genewarrior.com\">contact@genewarrior.com</a></p>");
+                        } else {
+                            $('#inProgress').remove();
+                            var link = answer[0].dbKey;
+                            $('#interaction').append("<br><input type=\"text\" id=\"linkText\" size=\"100\"><p>Copy the link above and share with your collaborators.</p>");
+                            $('#linkText').val(link).select();
+                        }
+                    })
+                    .fail(function (responseText) {
+                        $('#inProgress').remove();
+                        $('#interaction').append("<br><span style=\"color: #cd0a0a\"><span class=\"ui-icon ui-icon-alert\" style=\"float: left; margin-right: .3em;\"></span> Error: " + responseText + "</span><p>Try again or contact <a href=\"mailto:contact@genewarrior.com\">contact@genewarrior.com</a></p>");
+                    });
+            }
+
+            $(function () {
+                $("#createButton").button();
+            });
+
+        </script>
+    </head>
+
+<body>
+<a id="remove" href="/">Go to main site</a>
+<div style="display:none" id="interaction">Create a link to share your project. The project will be deleted if unused
+    for more than a month.<br>
+    Be aware that your project will be public. Everyone who has the created link will be able to view your
+    project.<br><br>
+    <button type='button' id='createButton'
+            class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only' role='button'
+            aria-disabled='false' onclick='createLink();'><span class='ui-button-text'>Generate link</span></button>
+</div>
+</body>
+</html>

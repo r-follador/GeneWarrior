@@ -1,0 +1,122 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description"
+          content="This tutorial explains an easy, quick and interactive way to design primers and DNA probes for PCR. Enter your DNA sequence and interactively choose your PCR target.">
+    <link href="docs.css" rel="stylesheet">
+    <title>How to design Primers for PCR</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>How to design Primers for PCR</h2>
+<p>GeneWarrior uses Primer3 for primer design. See <a href="http://sourceforge.net/projects/primer3/" target="_blank">here</a>
+    for more information about this software.</p>
+<p>See also the <a href="http://youtu.be/Tt5Lo7cTSK0" target="_blank">YouTube tutorial</a>.</p>
+<ol type="1">
+    <li>Enter your target DNA sequence (the sequence where you want to design primers on) into the text box and click
+        the button "<i>Add</i>". Your new entry is added.<br>
+        <img alt="Enter your DNA sequence" src="pics/tut_primerdesign_1.png"><br>
+        If you don't have any sequences and just want to try out GeneWarrior's functionality, you can import some
+        example sequences by clicking on "<i>Load Examples</i>", next to the "<i>Add</i>"-Button.<br>
+        <small>For more details regarding data entry and acceptable formats see <a href="doc_sequenceimport.html">Help>Sequence
+            Import</a></small>
+    </li>
+    <li>Select the entry that you want to use as PCR target by clicking on them. Selected entries change the background
+        color.<br>
+        <img alt="Your DNA sequence is added to the project. Select it by clicking on it."
+             src="pics/tut_primerdesign_2.png"><br>
+        To deselect an entry, click on it again; the background changes to white again.<br>
+        <small>For more details about selecting entries see <a href="doc_selecting.html">Help>Selecting entries</a><br>
+            <a href="doc_rename.html">Help>Renaming entries</a> describes how to change an entry name.</small>
+
+    </li>
+    <li>After selecting the entry, choose the appropriate command in the tool bar: "<i>PCR</i> > <i>Primer
+        design</i>".<br>
+        <img alt="PCR primer design tool" src="pics/tut_primerdesign_3.png"><br>
+        The primer design window opens.<br>
+        <img alt="PCR primer design tool" src="pics/tut_primerdesign_4.png"><br>
+    </li>
+    <li>
+        Choose a PCR target (the region around which the primers should be placed) by selecting a region using your
+        mouse
+        and clicking on "<i>Set Target</i>".<br>
+        <img alt="Interactively select your desired PCR target" src="pics/tut_primerdesign_5.png">&nbsp;&nbsp;&nbsp;<img
+            alt="Choose sequence as PCR target" src="pics/tut_primerdesign_6.png"><br>
+        The selected Target will be displayed as follows:<br>
+        <img alt="Selected Target for PCR primer design" src="pics/tut_primerdesign_7.png"><br><br>
+        <b>Optional rules:</b><br>
+        <i>Exclusion</i><br>
+        If you want to exclude regions from designing a primer on it, you can define them as Exclusions by selecting
+        them
+        using your mouse and clicking "<i>Set as Exclusion</i>". This is useful from preventing primers to anneal to
+        low quality sequences or repetitive regions.<br>
+        <img alt="Exclude this region from designing primers" src="pics/tut_primerdesign_13.png"><br>
+        <br>
+        <i>Force Primer position</i><br>
+        To force the left, right or both primers to start at a specified position, use the "<i>Force Primer to
+        position</i>"-option.
+        The position will be indicated as a red arrow. This of course limits the software to only vary the
+        length of the primer to satisfy your further constraints such as GC-content and melting temperature.<br>
+        If you specify both the left and right primer, no Target is needed.<br><br>
+        The left primer is forced to start at position 205.<br>
+        <img alt="Force PCR primer to begin at a specified position" src="pics/tut_primerdesign_14.png"><br>
+    </li>
+    <li>
+        After selecting your target (and Exclusions, if necessary), click on the next tab "<i>2) Set
+        Parameters</i>".<br>
+        <img alt="Choose parameters for automatic primer design" src="pics/tut_primerdesign_8.png"><br>
+        The parameters are preset for usual PCR conditions. If necessary, you can change the parameters to suit your
+        needs.<br>
+        The <i>product size</i> describes the length of the final PCR product and gives the software a constraint on
+        where to look for
+        suitable primers. If you set the range of the product size too narrow, chances are that no primers can be found
+        which
+        also fulfill the other constraints (such as melting temperature and GC content).<br>
+        The next three setting (<i>primer size</i>, <i>primer melting temperature</i> and <i>primer GC content</i>)
+        describe the desired properties
+        of the primers themselves. The narrower the range of constraints, the harder it will be for the software to find
+        suitable
+        primers.<br>
+        <i>Salt concentration</i> and <i>DNA concentration</i> describe the properties of the PCR reaction itself and
+        are used
+        to compute the melting temperatures.
+    </li>
+    <li>
+        If you want to design a hybridization probe in addition to the PCR primers (to be used in qPCR/Real-time PCR)
+        you can choose the option
+        "<i>Create Hybridization Probe</i>". The parameters are the same as above, but are used only for the design of
+        the probe.
+    </li>
+    <li>
+        Click on the last tab "<i>Choose Primers</i>" and the button "<i>Calculate Primers</i>".<br>
+        <img alt="Primer design tool" src="pics/tut_primerdesign_9.png"><br>
+        GeneWarrior will now try to design primers based on your entered parameters. If the parameters are too strict
+        an error message will explain where it failed. Try using less strict parameters, such as a broader range for
+        the product size, melting temperature and GC content.<br>
+        If everything is okay, upt to five primer pair candidates will be presented. You can choose and inspect the
+        candidates by using the dropdown box. The details such as primer sequence, position, melting temperature are
+        displayed below the dropdown box. The primer positions are visualized in the sequence itself.<br>
+        <img alt="Choose a PCR primer pair" src="pics/tut_primerdesign_10.png"><br>
+        <img alt="The PCR primer pair is displayed in your DNA sequence" src="pics/tut_primerdesign_11.png"><br>
+        If you're not happy with the primer positions, try choosing a different product size parameter or
+        setting/removing
+        exclusion regions.
+    </li>
+    <li>
+        If you have successfully chosen a primer pair candidate, click on the button "<i>Export this pair</i>" next to
+        the dropdown box. The primer design window will close and export the PCR details, the primer sequences and the
+        resulting PCR product into your project.<br>
+        <img alt="PCR primers, PCR properties, and PCR product is added to your project"
+             src="pics/tut_primerdesign_12.png"><br>
+    </li>
+</ol>
+
+<p>You can use the tool "<i>Share &amp; Export</i> > <i>Share project</i>" to share your PCR design with your
+    colleagues.</p>
+
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

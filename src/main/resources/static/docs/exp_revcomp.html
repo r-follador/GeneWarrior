@@ -1,0 +1,115 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>What is a Reverse Complement sequence</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h1>What is a Reverse Complement sequence?</h1>
+<p>See also <a href="tut_revcomp.html">how to create a reverse complement sequence</a>.</p>
+Each nucleotide in a double stranded DNA molecule is paired with its Watson-Crick counterpart. This counterpart is
+called its <i>complementary</i> nucleotide.<br>
+Double stranded DNA sequences are represented by the upper (sense) strand sequence going in the direction from its 5&prime;-
+to 3&prime;-end. The <i>complementary</i> sequence is thus the sequence of the lower (antisense) strand in the same
+direction as the upper strand. The <i>reverse</i> sequence is the sequence of the upper strand in the direction from its
+3&prime;- to its 5&prime;-end. The <i>reverse complement</i> sequence is the sequence of the lower strand in the
+direction of its 5&prime;- to its 3&prime;-end.<p>
+    <b>Example:</b><br>
+    <img src="pics/exp_revcomp_1.png"><br>Original sequence: <code>ACGTATAGGCTGACACGTAGAGATGGATGACCATAG</code><br>
+    Reverse sequence: <code>GATACCAGTAGGTAGAGATGCACAGTCGGATATGCA</code><br>
+    Complement sequence: <code>TGCATATCCGACTGTGCATCTCTACCTACTGGTATC</code><br>
+    Reverse complement: <code>CTATGGTCATCCATCTCTACGTGTCAGCCTATACGT</code></p>
+<p>
+    <b>List of all complement nucleotides:</b>
+<table BORDER="1">
+    <tr align="center">
+        <th>Base</th>
+        <th>Name / Bases</th>
+        <th>Complementary Base</th>
+    </tr>
+    <tr align="center">
+        <th>A</th>
+        <td>Adenine</td>
+        <td>T</td>
+    </tr>
+    <tr align="center">
+        <th>C</th>
+        <td>Cytidine</td>
+        <td>G</td>
+    </tr>
+    <tr align="center">
+        <th>G</th>
+        <td>Guanidine</td>
+        <td>C</td>
+    </tr>
+    <tr align="center">
+        <th>T</th>
+        <td>Thymidine</td>
+        <td>A</td>
+    </tr>
+    <tr align="center">
+        <th>Y</th>
+        <td>Pyrimidine (CT)</td>
+        <td>R</td>
+    </tr>
+    <tr align="center">
+        <th>R</th>
+        <td>Purine (AG)</td>
+        <td>Y</td>
+    </tr>
+    <tr align="center">
+        <th>S</th>
+        <td>Strong (GC)</td>
+        <td>S</td>
+    </tr>
+    <tr align="center">
+        <th>W</th>
+        <td>Weak (AT)</td>
+        <td>W</td>
+    </tr>
+    <tr align="center">
+        <th>K</th>
+        <td>Keto (TG)</td>
+        <td>M</td>
+    </tr>
+    <tr align="center">
+        <th>M</th>
+        <td>Amino (AC)</td>
+        <td>K</td>
+    </tr>
+    <tr align="center">
+        <th>B</th>
+        <td>not A (CGT)</td>
+        <td>V</td>
+    </tr>
+    <tr align="center">
+        <th>D</th>
+        <td>not C (AGT)</td>
+        <td>H</td>
+    </tr>
+    <tr align="center">
+        <th>H</th>
+        <td>not G (ACT)</td>
+        <td>D</td>
+    </tr>
+    <tr align="center">
+        <th>V</th>
+        <td>not T (ACG)</td>
+        <td>B</td>
+    </tr>
+    <tr align="center">
+        <th>N</th>
+        <td>Unknown (ACGT)</td>
+        <td>N</td>
+    </tr>
+</table>
+Uridine (U) is the replacement for Thymidine (T) in RNA. Any entered U are automatically converted into T.
+</p>
+<p>See the <a href="tut_revcomp.html">Tutorial</a> on how to create reverse complement sequence.</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

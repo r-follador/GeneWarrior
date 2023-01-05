@@ -1,0 +1,25 @@
+/* 
+    Document   : docs
+    Created on : Aug 29, 2014, 5:53:08 PM
+    Author     : rainer
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+@import url("http://fonts.googleapis.com/css?family=Lora|Droid+Sans+Mono");
+
+root {
+    display: block;
+}
+
+body {
+    font: 90% "Trebuchet MS", sans-serif;
+}
+
+h1, h2, h3 {
+    font-family: 'Lora', Helvetica, Arial, sans-serif;
+}
+
+ol li {
+    margin-bottom: 20px;
+}

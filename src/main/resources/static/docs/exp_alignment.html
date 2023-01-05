@@ -1,0 +1,104 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>What is an Alignment?</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h1>What is an Alignment?</h1>
+<p>See also <a href="tut_createalignment.html">how to create an alignment.</a>.</p>
+<p>
+    Homologous (related) sequences are aligned in such a way that letters (nucleotides for DNA or amino acids in the
+    case of proteins) which are listed
+    in the same column are thought to originate from the same ancestral letter.<br>
+    If all letters in a column are identical, this position is thought to be conserved. If the letters differ then it is
+    assumed that somewhere
+    along evolutionary time span a change (mutation) has taken place.<br>
+    Because homologous sequences are rarely of the same length, it is necessary to induce gaps into the alignment, so
+    that the following
+    columns are correctly aligned.<br>
+    <i>Example:</i><br>
+    <code>Sequence1 MCQFHRYM<br>
+        Sequence2 M-QFHRYM<br>
+        Sequence3 M-QFHRDM</code><br>
+    The alignment consists of 8 columns, and with the exception of column #2 and #7, all columns are conserved.<br>
+    Column #2 contains gaps because only Sequence1 contains an aspartic acid (D) at this position. From an evolutionary
+    perspective this could either be explained by the ancestral sequence having an aspartic acid at this position, but
+    Sequence2 and Sequence3 having lost it; or the ancestral sequence not having the aspartic acid and Sequence1 has
+    gained
+    it during the course of evolution.<br>
+    Column #7 on the other hand contains no gaps, but the position is also not conserved. Sequence1 and Sequence2 show a
+    tyrosine (Y) at this position, whereas Sequence3 shows an aspartic acid (D). One can either hypothesize that the
+    ancestral
+    sequence contained a tyrosine and Sequence3 suffered a mutation event or that the ancestral sequence contained an
+    aspartic acid
+    and Sequence1 and Sequence2 are the mutated sequences.</p>
+<h3>Substitution Matrix</h3>
+<p>
+    If we have following two sequences (note the differences in red):<br>
+    <code>Sequence1 T<font color="red">LE</font>VEPS<br>
+        Sequence2 T<font color="red">D</font>VEPS</code><br>
+    and we try to align them by hand, we would get two possible alignments:<br>
+    <i>Alignment 1:</i><br>
+    <code>Sequence1 TLEVEPS<br>
+        Sequence2 T<font color="red">D-</font>VEPS</code><br>
+    <i>Alignment 2:</i><br>
+    <code>Sequence1 TLEVEPS<br>
+        Sequence2 T<font color="red">-D</font>VEPS</code><br><br>
+    How do we decide which of those two possibilities to use?<br>
+    The answer lies in the substitution matrices. A <i>Substitution matrix</i> is a table which scores the possibilities
+    of mutations (substitutions). For example a substitution L to D has a score of -4 in the BLOSUM62-Matrix and a
+    substitution from E to D has a score of +2.<br>
+    The substitution score describes the probability of such a mutation occuring. The higher the score the more likely
+    such a mutation is. In the example of the first column (T remains T) this event has a score of +5; as we could have
+    imagined
+    it is thus more likely that no mutation occurs (higher score) then that a mutation occurs (lower score).<br>
+    Gaps are scored in a similar fashion (i.e. possibility that a amino acid vanishes).<br>
+    Scores are calculated by aligning many sequences by hand and calculating the possibilities of all possible
+    substitutions.
+    The Blosum62-Matrix can be viewed <a href="ftp://ftp.ncbi.nih.gov/blast/matrices/BLOSUM62" target="_blank">on the
+    NCBI website</a>.<br>
+    In the example above we would decide to use Alignment 2, since E to D has a higher score (has a higher probability)
+    than L to D.
+</p>
+<h3>Type of alignments</h3>
+<p>
+    There are two main types of alignments, <i>global</i> and <i>local</i> alignments.<br>
+    <i>Example:</i><br>
+    <code>
+        Sequence1 GVTQLNRLAA<br>
+        Sequence2 DTQLRRLCDA<br>
+    </code><br>
+    <i>Global Alignment</i><br>
+    <code>GVTQLNRLA-A<br>
+        -DTQLRRLCDA</code><br>
+    <i>Local Alignment</i><br>
+    <code>TQLNRL<br>
+        TQLRRL</code><br><br>
+
+    Global alignments try to align the entire sequence, whereas local alignments only output the part of the sequence
+    which gives the best (highest scoring) alignment (i.e. the region which has the highest similarity).<br>
+    A special case is the <i>cost-free end</i> (CFE) alignment. This is essentially a global alignment, with the
+    difference that
+    gaps are free at the start and the end of the alignment. This allows to resolve overlapping alignments.<br><br>
+    <i>Cost-free End (CFE) Alignment</i><br>
+    <code>LRMETRELNYGRL-------<br>
+        --------NYGRLQNQLAKK</code><br>
+</p>
+<p>
+    GeneWarrior let's you choose between Local alignments (named "<i>Highest similarity region</i>" in the toolbox) and
+    CFE alignments (named
+    "<i>Full sequences</i>") for pairwise alignments (alignment of two sequences).<br>
+    For multiple sequence alignment (MSA) a third-party software is used (MUSCLE), which performs a mix of Global and
+    Local
+    alignment.
+
+</p>
+<p>See the <a href="tut_createalignment.html">Tutorial</a> on how to create an alignment.</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

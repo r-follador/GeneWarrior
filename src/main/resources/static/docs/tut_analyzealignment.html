@@ -1,0 +1,97 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>How to analyze alignments</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>How to analyze an Alignment: Consensus sequences, phylogenetic trees and sequence logos</h2>
+
+<h3>Getting started</h3>
+<p>This tutorial assumes that you already created an alignment as described in the previous tutorial (<a
+        href="tut_createalignment.html">Tutorial > Create Alignment</a>).<br>
+    Alternatively, you can import an example alignment by clicking on "<i>Load Examples</i>", next to the "<i>Add</i>"-Button.<br>
+</p>
+<p>
+    Select all your alignments that you want to analyze by clicking on them. Selected entries change the background
+    color.<br>
+    <img src="pics/tut_analyzealignment_1.png" alt="Sequence Alignment"></p>
+<small>For more details about selecting entries see <a href="doc_selecting.html">Help>Selecting entries</a><br>
+    <a href="doc_rename.html">Help>Renaming entries</a> describes how to change an entry name.</small>
+<h3>How to create a Consensus sequence</h3>
+<p>The <i>Consensus sequence</i> is the most frequent letter (nucleotide or amino acid) for each column.<br>
+    Take a look at this example alignment:<br>
+    <code>
+        Sequence1 GLST<br>
+        Sequence2 GVA-<br>
+        Sequence3 GLT-<br>
+    </code>
+    The first column is completely conserved (G), so the consensus letter is a G. The second column is only partially
+    conserved;
+    the letter L occurs most often and is chosen as the consensus. The third column is not conserved at all, it's a tie
+    between all three
+    occuring letters, and X (unknown amino acid) is used as the consensus.<br>
+    Gaps also accounted for. In the fourth column, the gap is identified as the consensus. In the resulting consensus
+    sequence they are removed.<br>
+    In the case above, the consensus sequence would be <code>GLX</code> (the gap in the fourth column is automatically
+    removed).
+</p>
+<p>
+    In the case of a DNA sequence alignment, ambigous nucleotide letters are used in the case of a tie.<br>
+    For example if a column has two A and two C, an M is output as consensus letter.
+</p>
+<p>
+    To generate the consensus sequence from an alignment, click in the Toolbox on "<i>Analyze Alignments</i> > <i>Consensus
+    Sequence</i>".
+    <br>
+    <img src="pics/tut_analyzealignment_2.png" alt="Consensus Sequence"><br>
+    The consensus sequence is added as a new DNA or Protein sequence entry into your project.</p>
+
+<h3>How to create a Sequence Logo</h3>
+<p>
+    A much more sophisticated way to visualize sequence conservation than consensus sequences is the use of
+    <i>Sequence logos</i>. Each column in the alignment is depicted as a stack. The total height of the stack symbolizes
+    the conservation; the height of a single letter in the stack symbolizes the frequency of this letter.<br>
+    The y-axis represents the information content in bits.
+</p>
+<p>
+    GeneWarrior uses the <a href="http://weblogo.threeplusone.com/" target="_blank">WebLogo 3-Software</a> to generate
+    Sequence logos. More information about the use of sequence logos can be found on this website.<br>
+    Because the WebLogo software is quite computationally intensive, Alignments are currently limited to a maximum
+    of 1000 columns.
+</p>
+<p>
+    To generate the sequence logo from an alignment, click in the Toolbox on "<i>Analyze Alignments</i> > <i>Sequence
+    Logo</i>".<br>
+    <img src="pics/tut_analyzealignment_3.png" alt="Sequence Logo"><br>
+    The sequence logo is added as a new entry into your project.
+</p>
+
+<h3>How to create a Phylogenetic Tree</h3>
+<p>
+    Phylogenetic trees show the evolutionary relationship of the sequences in an alignment. It is assumed that sequences
+    which are
+    very similar to each other are much closer related then sequences with large differences. This relationship can be
+    visualized as
+    a bifurcating tree.<br>
+    GeneWarrior uses the <a href="http://www.drive5.com/muscle/" target="_blank">MUSCLE alignment software</a> and its
+    <code>-maketree</code> option to generate a UPGMA tree.<br>
+    Be aware that this is a quick-and-dirty way to generate a tree and does not replace a high-quality phylogenetic
+    tree.
+    Nonetheless, it is a useful way to get an approximate idea about the evolutionary relationships. Consider using <a
+        href="http://evolution.genetics.washington.edu/phylip.html" target="_blank">PHYLIP</a> for high quality
+    trees.
+</p>
+<p>
+    To generate the phylogenetic tree from an alignment, click in the Toolbox on "<i>Analyze Alignments</i> > <i>Phylogenetic
+    Tree</i>".<br>
+    <img src="pics/tut_analyzealignment_4.png" alt="Phylogenetic tree"><br>
+    The tree is added as a new entry into your project.
+</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

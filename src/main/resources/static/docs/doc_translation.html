@@ -1,0 +1,41 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>Translation</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>Translation</h2>
+<p>See also <a href="exp_translation.html">What is Translation?</a> and <a href="tut_translation.html">How to translate
+    your DNA sequence into a protein sequence</a>.</p>
+This command is only valid for DNA sequences.
+
+<p>The standard genetic code is set as default. Should you require a different genetic code, select it in the drop down
+    table. See <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi" target="_blank">here</a> for more
+    information about the different genetic codes.</p>
+<p><b>Show all frames</b><br>
+    Select a single DNA sequence (this action can only be performed for one sequence at a time) and click on the "<i>Show
+        all frames</i>". A new window opens, which displays the DNA sequence followed by all three forward reading
+    frames. Start codons are marked in green, stop codons in red. By clicking on a codon you can select the beginning of
+    a protein sequence, a subsequent click on a codon in the same frame selects the end. By clicking the button 'Export
+    selected', the selected protein sequence is added to your project.<br>
+    You can Shift-Click on a codon to automatically extend the selection to the corresponding open reading frame (ORF;
+    the most upstream start codon and the next downstream stop codon).
+</p>
+<p><b>Translate directly</b><br>
+    This option let's you directly translate one or multiple nucleotide sequences, without choosing an exact beginning
+    and end codon. Select one or more DNA sequences and choose the reading frame to translate the chosen DNA sequences
+    in full length. Stop codons are displayed as asterisks (*).<br>
+    Reverse reading frames uses the reverse complement of the chosen sequence. This is the same action as clicking the
+    reverse complement action followed by translating the resulting sequence using a forward reading frame.</p>
+<p><b>Best guess</b><br>
+    This option translates one or multiple nucleotide sequences by automatically choosing the longest possible open
+    reading frame (ORF) in all three forward and all three reverse frames.
+</p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

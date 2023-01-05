@@ -1,0 +1,56 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>Create Alignments</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>Sequence Alignment</h2>
+<p>See also <a href="exp_alignment.html">What is an Alignment?</a> and <a href="tut_createalignment.html">How to create
+    an Alignment</a>.</p>
+<p>
+    Two or more DNA or protein sequences are arranged in a way that similar characters (and similar regions) are ordered
+    in the same columns. Gaps (marked as <code>-</code>) are introduced to keep the order.<br>
+    Pairwise alignment (alignment of only two sequences) uses the <i>Needleman-Wunsch</i> algorithm for full length
+    alignments (Global alignments) and <i>Smith-Waterman</i> for local aligment.<br>
+    Local alignments are useful if you are only interested in the region which contains the highest similarity between
+    the two sequences, whereas global alignments try to align the entire sequence from beginning to end, with the
+    additional rule that the beginning and ends of a sequence can start anywhere (Cost-free end alignment, CFE),
+    thus allowing to align overlapping alignments<br>
+    Multiple sequence alignments (MSA) are more complex, since they allow more than two sequences to be aligned.
+    GeneWarrior uses <a href="http://www.drive5.com/muscle/manual/index.html" target="_blank">MUSCLE</a>, one of the
+    most popular MSA software, using the fast speed parameters.
+</p>
+<h3>Used Parameters</h3>
+<h4>Protein alignment</h4>
+<p>
+    Needleman-Wunsch and Smith-Waterman Alignment uses BLOSUM62 Substitution Matrix for alignment of proteins.
+    See <a href="ftp://ftp.ncbi.nih.gov/blast/matrices/BLOSUM62" target="_blank">BLAST site</a> for details of the used
+    scores.
+</p>
+<p>
+    Multiple sequence alignment by MUSCLE uses the "fastest" options: <code>-maxiters 1 -diags -sv -distance1
+    kbit20_3</code> as described on the <a href="http://www.drive5.com/muscle/manual/fastest.html" target="_blank">MUSCLE
+    documentation</a>.
+</p>
+<h4>DNA alignment</h4>
+<p>
+    Needleman-Wunsch and Smith-Waterman Alignment uses BLAST Substitution Matrix for alignment of nucleotides.
+    See <a href="ftp://ftp.ncbi.nih.gov/blast/matrices/NUC.4.4" target="_blank">BLAST site</a> for details of the used
+    scores.
+</p>
+<p>
+    Multiple sequence alignment by MUSCLE uses the "fastest" options: <code>-maxiters 1 -diags</code> as described on
+    the <a href="http://www.drive5.com/muscle/manual/fastest.html" target="_blank">MUSCLE documentation</a>.
+</p>
+<h4>Reference</h4>
+<p><a href="http://nar.oxfordjournals.org/cgi/reprint/32/5/1792" target="_blank">Edgar,
+    R.C. (2004) MUSCLE: multiple sequence alignment with high accuracy and
+    high throughput.<em>Nucleic Acids Res</em>. <b>32</b>(5):1792-1797</a></p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>

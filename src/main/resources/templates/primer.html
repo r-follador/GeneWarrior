@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>GeneWarrior-Primer</title>
+    <link href='css/dnatools.css' rel='stylesheet' type='text/css'/>
+    <link href="css/smoothness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+    <style>
+        table, th, td {
+            border: 1px solid lightgrey;
+            border-collapse: collapse;
+        }
+
+        text {
+            fill: #000000;
+            stroke: none;
+        }
+
+        #interaction {
+            -o-user-select: text;
+            -moz-user-select: text;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+    </style>
+    <script src="js/jquery-1.11.0.js"></script>
+    <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="js/dnatools_svg.js"></script>
+    <script>
+        var mousedownNuc = -1;
+
+        var isMarked = false;
+        var markedStart = -1;
+        var markedEnd = -1;
+
+        var svg_width = -200;
+        var sequence;
+
+        var target = null;
+        var exclusion = [];
+
+        var primerPairs = null;
+        var drawPrimerPair = -1;
+        var mousePos = {x: 0, y: 0};
+
+        var seqSVG;
+
+        function initialize(data) {
+            $('#remove').remove();
+            $('#accordion').css('visibility', 'visible');
+            sequence = data;
+
+            seqSVG = new sequenceSVG($("#primerSVG"), sequence);
+
+            seqSVG.charWidth = window.parent.document.getElementById('measureText').getComputedTextLength() / 12;
+            seqSVG.belowHeight = 13;
+            seqSVG.drawClassSpecific = function () {
+                if (target !== null)
+                    drawPrimerRegion(this, target.start, target.end, "#00FF66", "Target");
+                if (!(exclusion === null || exclusion.length === 0)) {
+                    for (var i = 0; i < exclusion.length; i++)
+                        drawPrimerRegion(this, exclusion[i].start, exclusion[i].end, "#FF6347", "Exclusion");
+                }
+                if (drawPrimerPair !== -1) {
+                    drawPrimer(this, primerPairs[drawPrimerPair].leftPosition, primerPairs[drawPrimerPair].leftPosition + primerPairs[drawPrimerPair].leftSequence.length - 1, ">> Left >>");
+                    drawPrimer(this, primerPairs[drawPrimerPair].rightPosition, primerPairs[drawPrimerPair].rightPosition - primerPairs[drawPrimerPair].rightSequence.length + 1, "<< Right <<");
+                    if (primerPairs[drawPrimerPair].hasInternal)
+                        drawPrimer(this, primerPairs[drawPrimerPair].internalPosition, primerPairs[drawPrimerPair].internalPosition + primerPairs[drawPrimerPair].internalSequence.length - 1, ">> Probe >>");
+                }
+                if ($('#forceRight').is(":checked") && $('#forceRightPosition').spinner("value") !== null) {
+                    drawForceRight(this, $('#forceRightPosition').spinner("value") - 1);
+                }
+                if ($('#forceLeft').is(":checked") && $('#forceLeftPosition').spinner("value") !== null) {
+                    drawForceLeft(this, $('#forceLeftPosition').spinner("value") - 1);
+                }
+            };
+
+            redraw();
+
+            updateSize();
+            if (!$('#pluginModalInfo', window.parent.document).length) {
+                $('#plugin-modal', window.parent.document).parent().find('.ui-dialog-buttonpane').append("<p id='pluginModalInfo'></p>");
+            }
+        }
+
+
+        function status(text) {
+            $('#pluginModalInfo', window.parent.document).html(text);
+        }
+
+
+        $(function () {
+            $(window).resize(function () {
+                updateSize();
+            });
+        });
+
+        function updateSize() {
+            seqSVG.updateSize();
+        }
+
+        function redraw() {
+            seqSVG.svgID.find(".primer").empty();
+            seqSVG.redraw();
+        }
+
+        function drawPrimerRegion(svg, start, stop, color, text) { //Target or exclcusion
+            var lineheight = svg.getLineheight();
+            var s = svg.getXY(start);
+            var e = svg.getXY(stop);
+            if (s.y === e.y) {
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                block.setAttributeNS(null, "fill", color);
+                block.setAttributeNS(null, "x", s.x);
+                block.setAttributeNS(null, "y", s.y - 2);
+                block.setAttributeNS(null, "rx", "5");
+                block.setAttributeNS(null, "ry", "5");
+                block.setAttributeNS(null, "width", e.x + svg.charWidth - s.x);
+                block.setAttributeNS(null, "height", seqSVG.fontHeight + 20);
+                svg.svgID.find('.primer').append(block);
+                var textBlock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textBlock.setAttributeNS(null, "x", s.x);
+                textBlock.setAttributeNS(null, "y", s.y + 12 + seqSVG.fontHeight);
+                textBlock.appendChild(document.createTextNode(text));
+                svg.svgID.find('.primer').append(textBlock);
+            } else {
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                block.setAttributeNS(null, "fill", color);
+                block.setAttributeNS(null, "x", s.x);
+                block.setAttributeNS(null, "y", s.y - 2);
+                block.setAttributeNS(null, "rx", "5");
+                block.setAttributeNS(null, "ry", "5");
+                block.setAttributeNS(null, "width", seqSVG.svgWidth - s.x);
+                block.setAttributeNS(null, "height", seqSVG.fontHeight + 20);
+                block.setAttributeNS(null, "fill", color);
+                svg.svgID.find('.primer').append(block);
+                var textBlock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textBlock.setAttributeNS(null, "x", s.x);
+                textBlock.setAttributeNS(null, "y", s.y + 12 + seqSVG.fontHeight);
+                textBlock.appendChild(document.createTextNode(text));
+                svg.svgID.find('.primer').append(textBlock);
+                for (var i = s.y + lineheight; i < e.y; i += lineheight) {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "fill", color);
+                    block.setAttributeNS(null, "x", "0");
+                    block.setAttributeNS(null, "y", i - 2);
+                    block.setAttributeNS(null, "rx", "5");
+                    block.setAttributeNS(null, "ry", "5");
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth);
+                    block.setAttributeNS(null, "height", seqSVG.fontHeight + 20);
+                    svg.svgID.find('.primer').append(block);
+                    var textBlock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    textBlock.setAttributeNS(null, "x", "0");
+                    textBlock.setAttributeNS(null, "y", i + 12 + seqSVG.fontHeight);
+                    textBlock.appendChild(document.createTextNode(text));
+                    svg.svgID.find('.primer').append(textBlock);
+                }
+
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                block.setAttributeNS(null, "fill", color);
+                block.setAttributeNS(null, "x", "0");
+                block.setAttributeNS(null, "y", e.y - 2);
+                block.setAttributeNS(null, "rx", "5");
+                block.setAttributeNS(null, "ry", "5");
+                block.setAttributeNS(null, "width", e.x + svg.charWidth);
+                block.setAttributeNS(null, "height", seqSVG.fontHeight + 20);
+                svg.svgID.find('.primer').append(block);
+                var textBlock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textBlock.setAttributeNS(null, "x", "0");
+                textBlock.setAttributeNS(null, "y", e.y + 12 + seqSVG.fontHeight);
+                textBlock.appendChild(document.createTextNode(text));
+                svg.svgID.find('.primer').append(textBlock);
+            }
+        }
+
+        function drawPrimer(svg, start, stop, name) {
+            var arrowHeight = svg.fontHeight + 18;
+
+            var s = svg.getXY(start);
+            s.y += arrowHeight;
+            var e = svg.getXY(stop);
+            e.y += arrowHeight;
+            var reverse = (start > stop);
+            var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttributeNS(null, "class", "primerArrow");
+            group.setAttributeNS(null, "style", "font-family: Verdana,Arial,sans-serif;font-size: 1em;");
+            group.setAttributeNS(null, "stroke", "#0404B4");
+            group.setAttributeNS(null, "stroke-width", "1");
+            group.setAttributeNS(null, "fill", "#CEE3F6");
+            if (s.y === e.y) {
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                if (reverse) {
+                    block.setAttributeNS(null, "x", e.x);
+                    block.setAttributeNS(null, "y", e.y - arrowHeight);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    block.setAttributeNS(null, "width", (s.x - e.x) + svg.charWidth);
+                    //block.setAttributeNS(null, "points", e.x + "," + (e.y  - (arrowHeight / 2)) + " " + (e.x + charWidth) + "," + (e.y  - arrowHeight) + " " + (s.x + charWidth) + "," + (s.y  - arrowHeight) + " " + (s.x + charWidth) + "," + (s.y ) + " " + (e.x + charWidth) + "," + (e.y ));
+                } else {
+                    block.setAttributeNS(null, "x", s.x);
+                    block.setAttributeNS(null, "y", e.y - arrowHeight);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    block.setAttributeNS(null, "width", (e.x - s.x) + svg.charWidth);
+                    //block.setAttributeNS(null, "points", (e.x + charWidth) + "," + (e.y  - (arrowHeight / 2)) + " " + (e.x) + "," + (e.y  - arrowHeight) + " " + s.x + "," + (s.y  - arrowHeight) + " " + s.x + "," + (s.y) + " " + (e.x) + "," + (e.y ));
+                }
+                group.appendChild(block);
+                var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttributeNS(null, "x", (reverse ? e.x : s.x) + svg.charWidth);
+                text.setAttributeNS(null, "y", (e.y - 3));
+                text.appendChild(document.createTextNode(name));
+                group.appendChild(text);
+            } else {
+                var lineheight = svg.getLineheight();
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                if (reverse) {
+                    block.setAttributeNS(null, "x", e.x);
+                    block.setAttributeNS(null, "y", e.y - arrowHeight);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth);
+                    //block.setAttributeNS(null, "points", e.x + "," + (e.y - (arrowHeight / 2)) + " " + (e.x + charWidth) + "," + (e.y  - arrowHeight) + " " + (svg_width + 10) + "," + (e.y  - arrowHeight) + " " + (svg_width + 10) + "," + (e.y ) + " " + (e.x + charWidth) + "," + (e.y ));
+                } else {
+                    block.setAttributeNS(null, "x", -10);
+                    block.setAttributeNS(null, "y", e.y - arrowHeight);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    block.setAttributeNS(null, "width", e.x + svg.charWidth + 10);
+                    //block.setAttributeNS(null, "points", (e.x + charWidth) + "," + (e.y  - (arrowHeight / 2)) + " " + (e.x) + "," + (e.y  - arrowHeight) + " -10," + (e.y  - arrowHeight) + " -10," + (e.y ) + " " + (e.x) + "," + (e.y ));
+                }
+                group.appendChild(block);
+                var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttributeNS(null, "x", (reverse ? e.x : 0) + svg.charWidth);
+                text.setAttributeNS(null, "y", (e.y - 3));
+                text.appendChild(document.createTextNode(name));
+                group.appendChild(text);
+                var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                if (reverse) {
+                    block.setAttributeNS(null, "x", "-10");
+                    block.setAttributeNS(null, "y", s.y - arrowHeight);
+                    block.setAttributeNS(null, "width", s.x + svg.charWidth + 10);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                } else {
+                    block.setAttributeNS(null, "x", s.x);
+                    block.setAttributeNS(null, "y", s.y - arrowHeight);
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth + 10);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                }
+                group.appendChild(block);
+                var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttributeNS(null, "x", (reverse ? 0 : s.x) + svg.charWidth);
+                text.setAttributeNS(null, "y", (s.y - 3));
+                text.appendChild(document.createTextNode(name));
+                group.appendChild(text);
+                var sy = s.y;
+                var ey = e.y;
+                if (reverse) {
+                    sy = e.y;
+                    ey = s.y;
+                }
+                for (var i = sy + svg.getLineheight(); i < ey; i += svg.getLineheight()) {
+                    var block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    block.setAttributeNS(null, "x", "-10");
+                    block.setAttributeNS(null, "y", i - arrowHeight);
+                    block.setAttributeNS(null, "width", seqSVG.svgWidth + 20);
+                    block.setAttributeNS(null, "height", arrowHeight);
+                    group.appendChild(block);
+                    var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttributeNS(null, "x", "0");
+                    text.setAttributeNS(null, "y", (i - 2));
+                    if (reverse) {
+                        text.appendChild(document.createTextNode("<<"));
+                    } else {
+                        text.appendChild(document.createTextNode(">>"));
+                    }
+                    group.appendChild(text);
+                    var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttributeNS(null, "x", seqSVG.svgWidth - 13);
+                    text.setAttributeNS(null, "y", (i - 3));
+                    if (reverse) {
+                        text.appendChild(document.createTextNode("<<"));
+                    } else {
+                        text.appendChild(document.createTextNode(">>"));
+                    }
+                    group.appendChild(text);
+                }
+
+            }
+            svg.svgID.find('.primer').append(group);
+        }
+
+        function drawForceLeft(svg, pos) {
+            var e = svg.getXY(pos);
+            if (e === null)
+                return;
+            e.y += 5 + svg.fontHeight;
+            var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            var block = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            group.setAttributeNS(null, "stroke", "#0404B4");
+            group.setAttributeNS(null, "stroke-width", "1");
+            group.setAttributeNS(null, "fill", "red");
+            block.setAttributeNS(null, "points", e.x + "," + e.y + " " + (e.x + svg.charWidth) + "," + (e.y + 5) + " " + e.x + "," + (e.y + 10));
+            group.appendChild(block);
+            svg.svgID.find('.primer').append(group);
+        }
+
+        function drawForceRight(svg, pos) {
+            var e = svg.getXY(pos);
+            if (e === null)
+                return;
+            e.y += 5 + svg.fontHeight;
+            var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            var block = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            group.setAttributeNS(null, "stroke", "#0404B4");
+            group.setAttributeNS(null, "stroke-width", "1");
+            group.setAttributeNS(null, "fill", "red");
+            block.setAttributeNS(null, "points", (e.x + svg.charWidth) + "," + e.y + " " + e.x + "," + (e.y + 5) + " " + (e.x + svg.charWidth) + "," + (e.y + 10));
+            group.appendChild(block);
+            svg.svgID.find('.primer').append(group);
+        }
+
+        $(document).ready(function () {
+            $('#primerSVG').on("mousemove", function (event) {
+                if (isMarked) {
+                    return;
+                }
+                seqSVG.removeHighlight();
+                var x = event.pageX - $(this).offset().left;
+                var y = event.pageY - $(this).offset().top;
+                var pos = seqSVG.getNucPosition(x, y);
+
+                if (pos === null) {
+                    status("");
+                    return;
+                }
+
+                if (mousedownNuc === -1) {
+                    status("Nucleotide " + (pos + 1));
+                } else {
+                    seqSVG.drawHighlight(mousedownNuc, pos);
+                    status("Selection " + (mousedownNuc < pos ? ((mousedownNuc + 1) + "-" + (pos + 1)) : ((pos + 1) + "-" + (mousedownNuc + 1))) + " nt [" + (mousedownNuc < pos ? pos - mousedownNuc + 1 : mousedownNuc - pos + 1) + " bp]");
+                }
+            }).on("mousedown", function (event) {
+
+                seqSVG.removeHighlight();
+                isMarked = false;
+                var x = event.pageX - $(this).offset().left;
+                var y = event.pageY - $(this).offset().top;
+
+                var pos = seqSVG.getNucPosition(x, y);
+
+                if (pos === null) {
+                    mousedownNuc = -1;
+                    status("");
+                    return;
+                } else {
+                    mousedownNuc = pos;
+                }
+                mousePos = {x: event.pageX, y: event.pageY};
+            }).on("mouseup", function (event) {
+                seqSVG.removeHighlight();
+                isMarked = false;
+                var x = event.pageX - $(this).offset().left;
+                var y = event.pageY - $(this).offset().top;
+                var pos = seqSVG.getNucPosition(x, y);
+
+                if (pos === null) {
+                    status("");
+                    return;
+                } else if (!(mousePos.x === event.pageX && mousePos.y === event.pageY)) {
+                    isMarked = true;
+                    if (mousedownNuc < pos) {
+                        markedStart = mousedownNuc;
+                        markedEnd = pos;
+                    } else {
+                        markedStart = pos;
+                        markedEnd = mousedownNuc;
+                    }
+
+                    status("Marked sequence: " + (markedStart + 1) + "-" + (markedEnd + 1) + " [" + (markedEnd - markedStart + 1) + " bp]");
+                    seqSVG.drawHighlight(markedStart, markedEnd);
+                }
+                mousedownNuc = -1;
+            });
+        });
+
+        $(document).ready(function () {
+            $('#setTarget').click(function () {
+                if (!isMarked) {
+                    alert2("Use your mouse to mark a target region.");
+                    return;
+                }
+                if (!checkOverlap(markedStart, markedEnd)) {
+                    alert2("The chosen region overlaps with another region.");
+                    return;
+                }
+                target = {start: markedStart, end: markedEnd};
+                $('#targetInfo').html("Target:<br>" + (target.start + 1) + "-" + (target.end + 1) + " bp (" + (target.end - target.start + 1) + ") <a href=\"javascript:void(0);\" onclick=\"removeTarget()\">[Remove]</a>");
+                setProductMinMax();
+                removeDrawPrimer();
+            });
+
+            $('#setExclusion').click(function () {
+                if (!isMarked) {
+                    alert2("Use your mouse to mark a target region.");
+                    return;
+                }
+                if (!checkOverlap(markedStart, markedEnd)) {
+                    alert2("The chosen region overlaps with another region.");
+                    return;
+                }
+                exclusion.push({start: markedStart, end: markedEnd});
+                exclusion.sort(function (a, b) {
+                    return a.start - b.start;
+                });
+                var excluHTML = "Exclusion:<br>";
+                for (var i = 0; i < exclusion.length; i++)
+                    excluHTML += (exclusion[i].start + 1) + "-" + (exclusion[i].end + 1) + " bp <a href=\"javascript:void(0);\" onclick=\"removeExclusion(" + exclusion[i].start + "," + exclusion[i].end + ")\">[Remove]</a><br>";
+                $('#exclusionInfo').html(excluHTML);
+                removeDrawPrimer();
+            });
+            $('#internalPrimer').click(function () {
+                removeDrawPrimer();
+                if ($('#internalPrimer').is(":checked"))
+                    $('#internalParams').show();
+                else
+                    $('#internalParams').hide();
+            });
+            $('#forceLeft').click(function () {
+                removeDrawPrimer();
+                if ($('#forceLeft').is(":checked")) {
+                    $('#forceLeftPosition').spinner("enable");
+                    if (isMarked)
+                        $('#forceLeftPosition').spinner("value", markedStart + 1);
+                } else
+                    $('#forceLeftPosition').spinner("disable");
+                setProductMinMax();
+                redraw();
+            });
+            $('#forceRight').click(function () {
+                removeDrawPrimer();
+                if ($('#forceRight').is(":checked")) {
+                    $('#forceRightPosition').spinner("enable");
+                    if (isMarked)
+                        $('#forceRightPosition').spinner("value", markedEnd + 1);
+                } else
+                    $('#forceRightPosition').spinner("disable");
+                setProductMinMax();
+                redraw();
+            });
+            $('#calculatePrimers').click(function () {
+                calculatePrimers();
+            });
+            $('#exportPrimer').click(function () {
+                exportPrimer();
+            });
+            $('#primerBlast').click(function () {
+                primerBlast();
+            });
+            $("#primerChooser").change(function () {
+                var select = $(this).val();
+                choosePrimer(select);
+            });
+            $(".spinner").on("spinchange", function (event, ui) {
+                removeDrawPrimer();
+            });
+            $(".spinner_dec").on("spinchange", function (event, ui) {
+                removeDrawPrimer();
+            });
+        });
+
+        $(function () {
+            $("#accordion").accordion();
+            $("#setTarget").button();
+            $("#setExclusion").button();
+            $(".spinner").spinner();
+            $(".spinner_dec").spinner({step: 0.1});
+            $("#calculatePrimers").button();
+            $("#exportPrimer").button();
+            $("#primerBlast").button();
+            $('#forceLeftPosition').spinner("disable");
+            $('#forceRightPosition').spinner("disable");
+            $('#forceRightPosition').spinner({
+                stop: function (event, ui) {
+                    if ($('#forceRightPosition').spinner("value") !== null && $('#forceRightPosition').spinner("value") < 1)
+                        $('#forceRightPosition').spinner("value", 1);
+                    else if ($('#forceRightPosition').spinner("value") !== null && $('#forceRightPosition').spinner("value") > sequence.sequence.length)
+                        $('#forceRightPosition').spinner("value", sequence.sequence.length);
+                    redraw();
+                    setProductMinMax();
+                }
+            });
+            $('#forceLeftPosition').spinner({
+                stop: function (event, ui) {
+                    if ($('#forceLeftPosition').spinner("value") !== null && $('#forceLeftPosition').spinner("value") < 1)
+                        $('#forceLeftPosition').spinner("value", 1);
+                    else if ($('#forceLeftPosition').spinner("value") !== null && $('#forceLeftPosition').spinner("value") > sequence.sequence.length)
+                        $('#forceLeftPosition').spinner("value", sequence.sequence.length);
+                    redraw();
+                    setProductMinMax();
+                }
+            });
+        });
+
+        function setProductMinMax() {
+            //set product min/max based on forced right
+            if ($('#forceRight').is(":checked") && $('#forceLeft').is(":checked") && $('#forceLeftPosition').spinner("value") !== null && $('#forceRightPosition').spinner("value") !== null) {
+                var maxSize = $('#forceRightPosition').spinner("value") - $('#forceLeftPosition').spinner("value") + 1;
+                $('#product_max').spinner("value", maxSize);
+                $('#product_min').spinner("value", maxSize - 70 < 1 ? 1 : maxSize - 70);
+            } else if ($('#forceRight').is(":checked") && $('#forceRightPosition').spinner("value") !== null && target !== null && target.start < $('#forceRightPosition').spinner("value")) {
+                var minSize = $('#forceRightPosition').spinner("value") - target.start;
+                $('#product_min').spinner("value", minSize);
+                $('#product_max').spinner("value", minSize + 200 > sequence.sequence.length ? sequence.sequence.length : minSize + 200);
+            } else if ($('#forceLeft').is(":checked") && $('#forceLeftPosition').spinner("value") !== null && $('#forceLeftPosition').spinner("value") !== null && target !== null && target.end > $('#forceLeftPosition').spinner("value")) {
+                var minSize = target.end - ($('#forceLeftPosition').spinner("value")) + 2;
+                $('#product_min').spinner("value", minSize);
+                $('#product_max').spinner("value", minSize + 200 > sequence.sequence.length ? sequence.sequence.length : minSize + 200);
+            } else if (target !== null) {
+                $('#product_min').spinner("value", (target.end - target.start + 1) < 40 ? 40 : (target.end - target.start + 1));
+                $('#product_max').spinner("value", ((target.end - target.start + 1) + 500 > sequence.sequence.length - 1 ? sequence.sequence.length - 1 : (target.end - target.start + 1) + 500));
+            }
+
+        }
+
+        function checkOverlap(start, end) {
+            if (target !== null) {
+                if ((target.start <= start && target.end >= start) || (target.start <= end && target.end >= end) || (target.start > start && target.end < end))
+                    return false;
+            }
+            if (!(exclusion === null || exclusion.length === 0)) {
+                for (var i = 0; i < exclusion.length; i++) {
+                    if ((exclusion[i].start <= start && exclusion[i].end >= start) || (exclusion[i].start <= end && exclusion[i].end >= end) || (exclusion[i].start > start && exclusion[i].end < end))
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        function removeTarget() {
+            target = null;
+            $('#targetInfo').html("No Target set");
+            drawPrimerPair = -1;
+            redraw();
+        }
+
+
+        function removeExclusion(start, end) {
+            for (var i = 0; i < exclusion.length; i++) {
+                if (exclusion[i].start === start && exclusion[i].end === end) {
+                    exclusion.splice(i, 1);
+                    i--;
+                }
+            }
+            var excluHTML = "Exclusion:<br>";
+            for (var i = 0; i < exclusion.length; i++)
+                excluHTML += (exclusion[i].start + 1) + "-" + (exclusion[i].end + 1) + " bp <a  href=\"javascript:void(0);\" onclick=\"removeExclusion(" + exclusion[i].start + "," + exclusion[i].end + ")\">[Remove]</a><br>";
+            if (exclusion.length === 0)
+                excluHTML = "No Exclusions set";
+            $('#exclusionInfo').html(excluHTML);
+            drawPrimerPair = -1;
+            redraw();
+        }
+
+        function calculatePrimers() {
+            drawPrimerPair = -1;
+            redraw();
+            $("#primerChooser").empty();
+            $("#primerSelection").hide();
+            primerPairs = null;
+            //Sanity checks
+            if (target === null && !($('#forceLeft').is(":checked") && $('#forceRight').is(":checked"))) {
+                alert2("No target selected. Select a target first.");
+                $("#accordion").accordion({active: 0, event: "click"});
+                return;
+            }
+            var product_min = $("#product_min").spinner("value");
+            var product_max = $("#product_max").spinner("value");
+            var min_size = $("#min_size").spinner("value");
+            var opt_size = $("#opt_size").spinner("value");
+            var max_size = $("#max_size").spinner("value");
+            var min_tm = $("#min_tm").spinner("value");
+            var opt_tm = $("#opt_tm").spinner("value");
+            var max_tm = $("#max_tm").spinner("value");
+            var min_gc = $("#min_gc").spinner("value");
+            var max_gc = $("#max_gc").spinner("value");
+            var salt_monovalent = $("#salt_monovalent").spinner("value");
+            var dna_conc = $("#dna_conc").spinner("value");
+            var doInternal = ($('#internalPrimer').is(":checked"));
+            var internal_min_size = $("#min_internal_size").spinner("value");
+            var internal_opt_size = $("#opt_internal_size").spinner("value");
+            var internal_max_size = $("#max_internal_size").spinner("value");
+            var internal_min_tm = $("#min_internal_tm").spinner("value");
+            var internal_opt_tm = $("#opt_internal_tm").spinner("value");
+            var internal_max_tm = $("#max_internal_tm").spinner("value");
+            var internal_min_gc = $("#min_internal_gc").spinner("value");
+            var internal_max_gc = $("#max_internal_gc").spinner("value");
+            var internal_salt_monovalent = $("#salt_monovalent_internal").spinner("value");
+            var internal_dna_conc = $("#dna_conc_internal").spinner("value");
+            var doForceLeft = ($('#forceLeft').is(":checked"));
+            var forceLeftPosition = $("#forceLeftPosition").spinner("value");
+            var doForceRight = ($('#forceRight').is(":checked"));
+            var forceRightPosition = $("#forceRightPosition").spinner("value");
+
+            if (!(doForceRight && doForceLeft)) {
+                if (product_max < (target.end - target.start + 1)) {
+                    alert2("Maximal Product Size cannot be smaller than the length of your target " + (target.end - target.start + 1));
+                    $("#accordion").accordion({active: 1, event: "click"});
+                    $("#product_max").focus();
+                    return;
+                }
+            }
+
+            if (checkMinMax(product_min, 1, product_max, "Minimal Product Size")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#product_min").focus();
+                return;
+            }
+
+            if (checkMinMax(product_max, product_min, sequence.sequence.length, "Maximal Product Size")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#product_max").focus();
+                return;
+            }
+
+            if (checkMinMax(min_size, 1, opt_size, "Minimal Primer Size")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#min_size").focus();
+                return;
+            }
+
+            if (checkMinMax(opt_size, min_size, max_size, "Optimal Primer Size")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#opt_size").focus();
+                return;
+            }
+
+            if (checkMinMax(max_size, opt_size, 35, "Maximal Primer Size")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#max_size").focus();
+                return;
+            }
+
+            if (checkMinMax(min_tm, 0, opt_tm, "Minimal Melting Temperature")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#min_tm").focus();
+                return;
+            }
+
+            if (checkMinMax(opt_tm, min_tm, max_tm, "Optimal Melting Temperature")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#opt_tm").focus();
+                return;
+            }
+
+            if (checkMinMax(max_tm, opt_tm, 200, "Maximal Melting Temperature")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#max_tm").focus();
+                return;
+            }
+
+            if (checkMinMax(min_gc, 0, max_gc, "Minimal Primer GC content")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#min_gc").focus();
+                return;
+            }
+
+            if (checkMinMax(max_gc, min_gc, 100, "Maximal Primer GC content")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#max_gc").focus();
+                return;
+            }
+
+            if (checkMinMax(salt_monovalent, 0, 10000, "Salt content")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#salt_monovalent").focus();
+                return;
+            }
+
+            if (checkMinMax(dna_conc, 0, 10000, "DNA concentration")) {
+                $("#accordion").accordion({active: 1, event: "click"});
+                $("#dna_conc").focus();
+                return;
+            }
+
+            if (doInternal) {
+                if (checkMinMax(internal_min_size, 1, internal_opt_size, "Minimal Probe Size")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#min_internal_size").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_opt_size, internal_min_size, internal_max_size, "Optimal Probe Size")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#opt_internal_size").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_max_size, internal_opt_size, 35, "Maximal Probe Size")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#max_internal_size").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_min_tm, 0, internal_opt_tm, "Minimal Probe Melting Temperature")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#min_internal_tm").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_opt_tm, internal_min_tm, internal_max_tm, "Optimal Probe Melting Temperature")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#opt_internal_tm").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_max_tm, internal_opt_tm, 200, "Maximal Probe Melting Temperature")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#max_internal_tm").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_min_gc, 0, internal_max_gc, "Minimal Probe GC content")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#min_internal_gc").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_max_gc, internal_min_gc, 100, "Maximal Probe GC content")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#max_internal_gc").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_salt_monovalent, 0, 10000, "Salt content Probe Reaction")) {
+                    $("#accordion").accordion({active: 2, event: "click"});
+                    $("#salt_monovalent_internal").focus();
+                    return;
+                }
+
+                if (checkMinMax(internal_dna_conc, 0, 10000, "DNA concentration Probe Reaction")) {
+                    $("#accordion").accordion({active: 1, event: "click"});
+                    $("#dna_conc_internal").focus();
+                    return;
+                }
+
+            }
+
+            if (doForceLeft) {
+                if (checkMinMax(forceLeftPosition, 0, sequence.sequence.length, "Force PCR Product Start")) {
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    $("#forceLeftPosition").focus();
+                    return;
+                }
+
+                forceLeftPosition--;
+                if (target !== null && forceLeftPosition > target.start) {
+                    alert2("PCR start position is after the target start. The primers must flank the target.");
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    return;
+                }
+                if (target !== null && forceLeftPosition + min_size > target.start) {
+                    alert2("PCR start position overlaps with selected target. A primer cannot overlap the target.");
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    return;
+                }
+            }
+
+            if (doForceRight) {
+                if (checkMinMax(forceRightPosition, 0, sequence.sequence.length, "Force PCR Product End")) {
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    $("#forceRightPosition").focus();
+                    return;
+                }
+
+                forceRightPosition--;
+                if (target !== null && forceRightPosition < target.end) {
+                    alert2("PCR end position is before the target end. The primers must flank the target.");
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    return;
+                }
+                if (target !== null && forceRightPosition - min_size < target.end) {
+                    alert2("PCR end position overlaps with selected target. A primer cannot overlap the target.");
+                    $("#accordion").accordion({active: 0, event: "click"});
+                    return;
+                }
+            }
+
+            if (doForceLeft && doForceRight) {
+                if (forceLeftPosition > forceRightPosition) {
+                    alert2("You can't force the PCR Product start to be after the end");
+                    $("#accordion").accordion({active: 1, event: "click"});
+                    $("#forceLeftPosition").focus();
+                    return;
+                }
+            }
+
+
+            //send data
+            $('#interaction').html("<p><img src=\"css/ajax-loader.gif\">Hard at work...</p>");
+
+            var exclusionString = [];
+            if (exclusion.length === 0)
+                exclusionString = "keine";
+            else {
+                for (var i = 0; i < exclusion.length; i++) {
+                    var b = exclusion[i].start + "-" + exclusion[i].end;
+                    exclusionString.push(b);
+                }
+            }
+
+            $.ajax({
+                url: 'dnatoolsServlet',
+                data: {
+                    type: "primer3", text: sequence.sequence,
+                    target: (target === null ? "null" : target.start + "-" + target.end),
+                    exclusion: exclusionString,
+                    product_min: product_min,
+                    product_max: product_max,
+                    min_size: min_size,
+                    opt_size: opt_size,
+                    max_size: max_size,
+                    min_tm: min_tm,
+                    opt_tm: opt_tm,
+                    max_tm: max_tm,
+                    min_gc: min_gc,
+                    max_gc: max_gc,
+                    salt_monovalent: salt_monovalent,
+                    dna_conc: dna_conc,
+                    doInternal: doInternal,
+                    internal_min_size: internal_min_size,
+                    internal_opt_size: internal_opt_size,
+                    internal_max_size: internal_max_size,
+                    internal_min_tm: internal_min_tm,
+                    internal_opt_tm: internal_opt_tm,
+                    internal_max_tm: internal_max_tm,
+                    internal_min_gc: internal_min_gc,
+                    internal_max_gc: internal_max_gc,
+                    internal_salt_monovalent: internal_salt_monovalent,
+                    internal_dna_conc: internal_dna_conc,
+                    doForceLeft: doForceLeft,
+                    forceLeftPosition: forceLeftPosition,
+                    doForceRight: doForceRight,
+                    forceRightPosition: forceRightPosition
+                },
+                type: 'POST'
+            })
+                .done(function (responseText) {
+
+                    var answer = $.parseJSON(responseText);
+                    if (answer[0].type === 'error') {
+                        alert2("Error calculating Primers: " + answer[0].error);
+                        $('#interaction').html("");
+                    } else {
+                        if (answer[0].error !== "") {
+                            $('#interaction').html("<p>Error from Primer3:<br>" + answer[0].error + "</p>");
+                        } else {
+                            if (answer[0].primerPairs.length < 1) {
+                                $('#interaction').html("<p>No Primers found. Reason:<br>" + answer[0].explanation + "</p><p>Maybe try less stringent parameters.</p>");
+                            } else {
+                                primerPairs = answer[0].primerPairs;
+                                $('#interaction').html("");
+                                $("#primerSelection").show();
+                                for (var i = 0; i < answer[0].primerPairs.length; i++)
+                                    $("#primerChooser").append("<option value=\"" + i + "\">Primer Pair " + (i + 1) + "</option>");
+                                choosePrimer(0);
+                            }
+                        }
+                    }
+                })
+                .fail(function (responseText) {
+                    alert2("Error calculating Primers: " + responseText);
+                    $('#interaction').html("");
+                });
+        }
+
+        function checkMinMax(value, min, max, name) {
+            if (value === null) {
+                alert2("Value for " + name + " is not valid");
+                return true;
+            }
+            if (value < min || value > max) {
+                alert2("Value for " + name + " is out of range [" + min + "-" + max + "]");
+                return true;
+            }
+            return false;
+        }
+
+        function alert2(text) {
+            parent.alert2(text);
+        }
+
+        function choosePrimer(val) {
+            if (primerPairs === null)
+                return;
+            var html = "<i>Left Primer</i> (" + (primerPairs[val].leftPosition + 1) + "-" + ((primerPairs[val].leftPosition) + primerPairs[val].leftSequence.length) + ")<br>" + primerPairs[val].leftSequence;
+            html += "<br><i>Right Primer</i> (" + (primerPairs[val].rightPosition + 1) + "-" + ((primerPairs[val].rightPosition + 1) - primerPairs[val].rightSequence.length + 1) + ")<br>" + primerPairs[val].rightSequence;
+            if (primerPairs[val].hasInternal)
+                html += "<br><i>Probe</i> (" + (primerPairs[val].internalPosition + 1) + "-" + ((primerPairs[val].internalPosition) + primerPairs[val].internalSequence.length) + ")<br>" + primerPairs[val].internalSequence;
+            html += "<br><small>Primer sequences in 5&prime; to 3&prime;-direction</small><br><br>Product size: " + primerPairs[val].productSize;
+            html += "<table><tr><td>Primer</td><td>Length</td><td>Tm °C</td><td>GC %</td></tr>";
+            html += "<tr><td>Left</td><td>" + primerPairs[val].leftSequence.length + "</td><td>" + primerPairs[val].leftTm + "</td><td>" + primerPairs[val].leftGC + "</td></tr>";
+            html += "<tr><td>Right</td><td>" + primerPairs[val].rightSequence.length + "</td><td>" + primerPairs[val].rightTm + "</td><td>" + primerPairs[val].rightGC + "</td></tr>";
+            if (primerPairs[val].hasInternal)
+                html += "<tr><td>Probe</td><td>" + primerPairs[val].internalSequence.length + "</td><td>" + primerPairs[val].internalTm + "</td><td>" + primerPairs[val].internalGC + "</td></tr>";
+            html += "</table>";
+            $("#interaction").html(html);
+            drawPrimerPair = val;
+            redraw();
+        }
+
+        function removeDrawPrimer() {
+            drawPrimerPair = -1;
+            primerPairs = null;
+            svg = document.getElementById("primerSVG");
+            $("#primerSVG").remove(".primerArrow");
+            $('#interaction').html("");
+            $("#primerChooser").empty();
+            $("#primerSelection").hide();
+            redraw();
+        }
+
+        function primerBlast() {
+            var seqFasta = '>' + sequence.name + '\n' + sequence.sequence + '\n';
+            $("<form action='http://www.ncbi.nlm.nih.gov/tools/primer-blast/' method='POST' target='_blank'>" +
+                "<input type='hidden' name='INPUT_SEQUENCE' value='" + escapeQuotes(seqFasta) + "'>" +
+                "<input type='hidden' name='PRIMER_LEFT_INPUT' value='" + primerPairs[drawPrimerPair].leftSequence + "'>" +
+                "<input type='hidden' name='PRIMER_RIGHT_INPUT' value='" + primerPairs[drawPrimerPair].rightSequence + "'>" +
+                "<input type='hidden' name='PRIMER_PRODUCT_MIN' value='" + $("#product_min").spinner("value") + "'>" +
+                "<input type='hidden' name='PRIMER_PRODUCT_MAX' value='" + $("#product_max").spinner("value") + "'>" +
+                "<input type='hidden' name='PRIMER_MIN_TM' value='" + $("#min_tm").spinner("value") + "'>" +
+                "<input type='hidden' name='PRIMER_OPT_TM' value='" + $("#opt_tm").spinner("value") + "'>" +
+                "<input type='hidden' name='PRIMER_MAX_TM' value='" + $("#max_tm").spinner("value") + "'>" +
+                "<input type='hidden' name='PRIMER_MAX_DIFF_TM' value='" + ($("#max_tm").spinner("value") - $("#min_tm").spinner("value")) + "'>" +
+                "</form>").appendTo('body').submit().remove();
+        }
+
+        function escapeQuotes(text) {
+            return text.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+        }
+
+        function exportPrimer() {
+            //Product
+            $.post('dnatoolsServlet', {
+                type: "getSubsequence",
+                start: primerPairs[drawPrimerPair].leftPosition,
+                end: (primerPairs[drawPrimerPair].rightPosition),
+                title: sequence.name + " [PCR Design: Product]",
+                pos: sequence.pos,
+                text: JSON.stringify(sequence)
+            })
+                .done(function (responseText) {
+                    parent.addSequencesFromResponse(responseText, sequence.pos);
+                    //Internal
+                    if (primerPairs[drawPrimerPair].hasInternal) {
+                        $.post('dnatoolsServlet', {
+                            type: "getSubsequence",
+                            start: (primerPairs[drawPrimerPair].internalPosition),
+                            end: ((primerPairs[drawPrimerPair].internalPosition) + primerPairs[drawPrimerPair].internalSequence.length - 1),
+                            title: sequence.name + " [PCR Design: Probe]",
+                            noMarks: "true",
+                            pos: sequence.pos,
+                            text: JSON.stringify(sequence)
+                        })
+                            .done(function (responseText) {
+                                parent.addSequencesFromResponse(responseText, sequence.pos);
+                            })
+                            .fail(function (responseText) {
+                                alert2("Failed contacting server:" + responseText);
+                            });
+                    }
+                    //Right
+                    $.post('dnatoolsServlet', {
+                        type: "getSubsequence",
+                        start: ((primerPairs[drawPrimerPair].rightPosition + 1) - primerPairs[drawPrimerPair].rightSequence.length),
+                        end: (primerPairs[drawPrimerPair].rightPosition),
+                        reverse: "true",
+                        title: sequence.name + " [PCR Design: Right Primer]",
+                        noMarks: "true",
+                        pos: sequence.pos,
+                        text: JSON.stringify(sequence)
+                    })
+                        .done(function (responseText) {
+                            parent.addSequencesFromResponse(responseText, sequence.pos);
+                            //Left
+                            $.post('dnatoolsServlet', {
+                                type: "getSubsequence",
+                                start: primerPairs[drawPrimerPair].leftPosition,
+                                end: ((primerPairs[drawPrimerPair].leftPosition) + primerPairs[drawPrimerPair].leftSequence.length) - 1,
+                                title: sequence.name + " [PCR Design: Left Primer]",
+                                noMarks: "true",
+                                pos: sequence.pos,
+                                text: JSON.stringify(sequence)
+                            })
+                                .done(function (responseText) {
+                                    parent.addSequencesFromResponse(responseText, sequence.pos);
+                                    //Text
+                                    var val = drawPrimerPair;
+                                    var html = "<b>Primer Design</b><br><i>Template: </i> " + sequence.name + "<br>";
+                                    if (target !== null)
+                                        html += "<i>Target region:</i> " + (target.start + 1) + "-" + (target.end + 1) + "<br>";
+                                    if (exclusion.length > 0) {
+                                        html += "<i>Exclusion region:</i><br>";
+                                        for (var i = 0; i < exclusion.length; i++)
+                                            html += (exclusion[i].start + 1) + "-" + (exclusion[i].end + 1) + "<br>";
+                                    }
+                                    if ($('#forceLeft').is(":checked")) {
+                                        html += "<i>Forced PCR Product start:</i> " + $("#forceLeftPosition").spinner("value") + "<br>";
+                                    }
+                                    if ($('#forceRight').is(":checked")) {
+                                        html += "<i>Forced PCR Product end:</i> " + $("#forceRightPosition").spinner("value") + "<br>";
+                                    }
+                                    html += "<br><i>Salt concentration:</i> " + $("#salt_monovalent").spinner("value") + "mM<br><i>DNA concentration</i>: " + $("#dna_conc").spinner("value") + "nM<br>";
+                                    if (primerPairs[val].hasInternal)
+                                        html += "<br><i>Salt concentration Probe:</i> " + $("#salt_monovalent_internal").spinner("value") + "mM<br><i>DNA concentration Probe</i>: " + $("#dna_conc_internal").spinner("value") + "nM<br>";
+
+                                    html += "<table><tr><td><i>Primer</i></td><td><i>Sequence</i></td><td><i>Length</i></td><td><i>Position</i></td><td><i>Tm °C</i></td><td><i>GC %</i></td></tr>";
+                                    html += "<tr><td>Left</td><td>" + primerPairs[val].leftSequence + "</td><td>" + primerPairs[val].leftSequence.length + "</td><td>" + (primerPairs[val].leftPosition + 1) + "-" + ((primerPairs[val].leftPosition) + primerPairs[val].leftSequence.length) + "</td><td>" + primerPairs[val].leftTm + "</td><td>" + primerPairs[val].leftGC + "</td></tr>";
+                                    html += "<tr><td>Right</td><td>" + primerPairs[val].rightSequence + "</td><td>" + primerPairs[val].rightSequence.length + "</td><td>" + (primerPairs[val].rightPosition + 1) + "-" + ((primerPairs[val].rightPosition + 1) - primerPairs[val].rightSequence.length + 1) + "</td><td>" + primerPairs[val].rightTm + "</td><td>" + primerPairs[val].rightGC + "</td></tr>";
+                                    if (primerPairs[val].hasInternal)
+                                        html += "<tr><td>Probe</td><td>" + primerPairs[val].internalSequence + "</td><td>" + primerPairs[val].internalSequence.length + "</td><td>" + (primerPairs[val].internalPosition + 1) + "-" + ((primerPairs[val].internalPosition) + primerPairs[val].internalSequence.length) + "</td><td>" + primerPairs[val].internalTm + "</td><td>" + primerPairs[val].internalGC + "</td></tr>";
+                                    html += "</table>";
+                                    html += "<br><br>Product size: " + primerPairs[val].productSize;
+                                    $.post('dnatoolsServlet', {
+                                        type: "addCustomText",
+                                        title: sequence.name + " [PCR Design]",
+                                        pos: sequence.pos,
+                                        text: html
+                                    })
+                                        .done(function (responseText) {
+                                            parent.scrollToEntry(parent.addSequencesFromResponse(responseText, sequence.pos));
+                                            parent.$('#plugin-modal').dialog('close');
+                                        })
+                                        .fail(function (responseText) {
+                                            alert2("Failed contacting server:" + responseText);
+                                        });
+                                })
+                                .fail(function (responseText) {
+                                    alert2("Failed contacting server:" + responseText);
+                                });
+                        })
+                        .fail(function (responseText) {
+                            alert2("Failed contacting server:" + responseText);
+                        });
+
+                })
+                .fail(function (responseText) {
+                    alert2("Failed contacting server:" + responseText);
+                });
+        }
+    </script>
+</head>
+
+<body>
+<a id="remove" href="index">Go to main site</a>
+<div style="position:fixed;top:20px;right:10px;width:310px;">
+    <div class="help" onclick="parent.showDoc('docs/doc_pcr.html');">{Help}</div>
+    <div style="visibility:hidden;" id="accordion">
+        <h3>1) Set Rules</h3>
+        <div>
+            <p>
+                Define your <b>Target</b>. Primers will flank outside of the target, but cannot overlap it.
+            </p>
+            <button id="setTarget"
+                    title="The region which has to be included in the PCR product (Primers will flank the target, but not overlap it)">
+                Set Target
+            </button>
+            <div id="targetInfo">No Target set</div>
+            <p>
+                Optionally define <b>Exclusion regions</b>. No primers will be placed there.
+            </p>
+            <button id="setExclusion" title="Regions where no primer or probe can be set">Set as Exclusion</button>
+            <div id="exclusionInfo">No Exclusions set</div>
+            <p>
+                <input type="checkbox" name="forceLeft" id="forceLeft">Force Left Primer to position
+                <input id="forceLeftPosition" style="width: 35px" class="spinner" disabled><br>
+                <input type="checkbox" name="forceRight" id="forceRight">Force Right Primer to position
+                <input id="forceRightPosition" style="width: 35px" class="spinner" disabled></p>
+        </div>
+        <h3>2) Set Parameters</h3>
+        <div>
+            <p>Product size:<br>
+                Min:
+                <input id="product_min" name="value" style="width: 40px" class="spinner" value="50">
+                Max:
+                <input id="product_max" name="value" style="width: 40px" class="spinner" value="150">
+            </p>
+
+            <p>Primer size:<br>
+                Min:
+                <input id="min_size" name="value" style="width: 15px" class="spinner" value="15">
+                Opt:
+                <input id="opt_size" name="value" style="width: 15px" class="spinner" value="18">
+                Max:
+                <input id="max_size" name="value" style="width: 15px" class="spinner" value="21">
+            </p>
+
+            <p>Primer Melting Temperature (TM) in °C:<br>
+                Min:
+                <input id="min_tm" name="value" style="width: 25px" class="spinner_dec" value="57.0">
+                Opt:
+                <input id="opt_tm" name="value" style="width: 25px" class="spinner_dec" value="60.0">
+                Max:
+                <input id="max_tm" name="value" style="width: 25px" class="spinner_dec" value="63.0">
+            </p>
+
+            <p>Primer GC content (in %):<br>
+                Min:
+                <input id="min_gc" name="value" style="width: 15px" class="spinner" value="20">
+                Max:
+                <input id="max_gc" name="value" style="width: 15px" class="spinner" value="80">
+            </p>
+
+            <p>Salt concentration:<br>
+                In mM:
+                <input id="salt_monovalent" name="value" style="width: 25px" class="spinner_dec" value="50.0"><br>
+            </p>
+            <p>DNA concentration:<br>
+                In nM:
+                <input id="dna_conc" name="value" style="width: 25px" class="spinner_dec" value="50.0"><br>
+            </p>
+        </div>
+        <h3>3) Hybridization Probe</h3>
+        <div>
+            <input type="checkbox" name="internalPrimer" id="internalPrimer">Create Hybridization Probe<br>
+            <div id="internalParams" style="display:none">
+
+                <p>Probe size:<br>
+                    Min:
+                    <input id="min_internal_size" name="value" style="width: 15px" class="spinner" value="15">
+                    Opt:
+                    <input id="opt_internal_size" name="value" style="width: 15px" class="spinner" value="18">
+                    Max:
+                    <input id="max_internal_size" name="value" style="width: 15px" class="spinner" value="21">
+                </p>
+
+                <p>Probe Melting Temperature (TM) in °C:<br>
+                    Min:
+                    <input id="min_internal_tm" name="value" style="width: 25px" class="spinner_dec" value="57.0">
+                    Opt:
+                    <input id="opt_internal_tm" name="value" style="width: 25px" class="spinner_dec" value="60.0">
+                    Max:
+                    <input id="max_internal_tm" name="value" style="width: 25px" class="spinner_dec" value="63.0">
+                </p>
+
+                <p>Probe GC content (in %):<br>
+                    Min:
+                    <input id="min_internal_gc" name="value" style="width: 15px" class="spinner" value="20">
+                    Max:
+                    <input id="max_internal_gc" name="value" style="width: 15px" class="spinner" value="80">
+                </p>
+
+                <p>Salt concentration:<br>
+                    In mM:
+                    <input id="salt_monovalent_internal" name="value" style="width: 25px" class="spinner_dec"
+                           value="50.0"><br>
+                </p>
+                <p>DNA concentration:<br>
+                    In nM:
+                    <input id="dna_conc_internal" name="value" style="width: 25px" class="spinner_dec" value="50.0"><br>
+                </p>
+            </div>
+        </div>
+        <h3>4) Choose Primers</h3>
+        <div>
+            <button id="calculatePrimers">Calculate Primers</button>
+            <p id="primerSelection" style="display:none"><select name="primerChooser" id="primerChooser"></select><br>
+                <button id="exportPrimer" title="Add to your Project">Export this Pair</button>
+                <button id="primerBlast" title="Show in NCBI PrimerBLAST to check for specifity">NCBI PrimerBLAST
+                </button>
+            </p>
+            <div id="interaction"></div>
+        </div>
+    </div>
+</div>
+<div style="margin-right: 305px;">
+    <svg style="" id='primerSVG' class='entrySeq' width="100%" height="300">
+        <g class="primer"></g>
+        <g class="forms"></g>
+        <g class="seqs"></g>
+        <g class="marking"></g>
+    </svg>
+</div>
+</body>
+</html>

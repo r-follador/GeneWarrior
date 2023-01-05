@@ -1,0 +1,88 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="docs.css" rel="stylesheet">
+    <title>How to translate your DNA sequence into a protein sequence</title>
+</head>
+<body>
+<div id="docHeader"><a href="http://www.genewarrior.com"><img src="../css/genewarrior_mansgoggel.png"><img id="logo"
+                                                                                                           src="../css/genewarrior_dnatools.png"></a>
+    <br>This page is part of the GeneWarrior Documentation. Go to the <a href="../index">main site</a> of GeneWarrior
+</div>
+<h2>How to translate your DNA sequence into a protein sequence</h2>
+<p>See also <a href="exp_translation.html">What is Translation?</a></p>
+<ol type="1">
+    <li>Enter your DNA sequence into the text box and click the button "<i>Add</i>". Your new entry is added.<br>
+        <img src="pics/tut_translation_1.png"><br>
+        You can enter all sequences you need to convert at this point. If you don't have any sequences and just want to
+        try it out, you can import some example sequences by clicking on "<i>Load Examples</i>", next to the "<i>Add</i>"-Button.<br>
+        <small>For more details regarding data entry and acceptable formats see <a href="doc_sequenceimport.html">Help>Sequence
+            Import</a></small>
+    </li>
+    <li>Select all your entries that you want to convert by clicking on them. Selected entries change the background
+        color.<br>
+        <img src="pics/tut_translation_2.png"><br>
+        To deselect an entry, click on it again; the background changes to white again. You can select multiple entries
+        to convert them all at once.<br>
+        <small>For more details about selecting entries see <a href="doc_selecting.html">Help>Selecting entries</a><br>
+            <a href="doc_rename.html">Help>Renaming entries</a> describes how to change an entry name.</small>
+
+    </li>
+    <li>After selecting the entries, choose the appropriate command in the tool bar: "<i>Translation</i>".<br>
+        <img src="pics/tut_translation_3.png"><br>
+        First of all select the appropriate translation table (or genetic code). If you're unsure which one to use,
+        leave the default setting "<i>Standard Code</i>"<br>
+    </li>
+</ol>
+<p>
+    Now you have a couple of options on how to proceed. Let's take a look at them one by one.
+</p>
+<h3>Option 1- Show all frames</h3>
+<p>If you're unsure which reading frame to choose, select this tool. It will open up a new window, where you can inspect
+    your sequence in detail and see all three forward frames.<br>
+    <img src="pics/tut_translation_4.png"><br>
+    The top row shows your nucleotide sequence, the bottom three rows show the three forward reading frames. Every arrow
+    denotes a three-nucleotide codon.<br>
+    Codons colored in green are start codons, red denotes a stop codon.
+</p>
+<p>
+    Click on a codon to select the start of your sequence, click again on a codon in the same frame to select the end of
+    your sequence.
+    <img src="pics/tut_translation_5.png"><br>
+    On the bottom right a button named "<i>Export selected</i>" appears. By clicking it, the selected protein sequence
+    gets exported to your project.<br>
+    <img src="pics/tut_translation_6.png"><br>
+    Stop codons are written as asterisks (*). They are ignored for any further analysis such as alignments.<br>
+    Instead of selecting the start and the end by hand, you can also Shift-Click on a codon and the selection is
+    automatically extended
+    to the most upstream start codon and the next downstream stop codon. This makes it easy to select an open reading
+    frame (ORF) quickly.
+</p>
+<h3>Option 2- Translate directly</h3>
+<p>
+    If you know beforehand which frame you want to use to translate your sequences, choose the appropriate Frame
+    directly (e.g. "<i>Forward 1</i>" for Frame 1). This translates the
+    entire DNA sequence to the corresponding protein sequence, without taking start and stop codons into special
+    consideration.<br>
+    <img src="pics/tut_translation_7.png"><br>
+    The sample sequence from above was translated using Frame 1.<br>
+    It's also possible to select reverse frames (e.g. "<i>Reverse 1</i>"); this is essentially a shortcut of taking the
+    Reverse Complement of the sequence and translate the resulting sequence using Forward Frame 1.
+</p>
+<h3>Option 3- Best guess</h3>
+<p>
+    The easiest way is to let GeneWarrior make a best guess. This is done by automatically selecting the longest open
+    reading frame (ORF)
+    on all three forward and all three reverse reading frames.<br>
+    If no ORF can be found (e.g. for short sequences) a warning is returned.
+    <img src="pics/tut_translation_8.png"><br>
+    The sample sequence from above was translated using the "<i>Best guess</i>"-Tool, resulting in the longest possible
+    ORF.
+    The details on which subsequence was selected is added to the name.
+</p>
+
+
+<p>For an explanation about Translation see <a href="exp_translation.html">What is a Translation?</a></p>
+<p id="gotoIndex"><a href="index.html">Back to Documentation index</a></p>
+</body>
+</html>
