@@ -162,7 +162,7 @@ function addSequence(seq, afterPos) {
             $("#li" + afterPos).after(nav);
         }
         //svg[pos] = new sequenceSVG(document.getElementById("se" + pos), seq);
-        sequenceEntry[pos] = new sequenceSVG($("#se" + pos), seq);
+        sequenceEntry[pos] = new SequenceSVG($("#se" + pos), seq);
         sequenceEntry[pos].draw();
     } else if (seq.type === 'aa') {
         var bla = "<div style=\"display:none\" class=\"entryAA\" id=\"en" + pos + "\"><div style=\"display:inline-block;float:right\" class=\"ui-state-default ui-corner-all\" title=\"Delete entry\" id=\"icons\"><span class=\"ui-icon ui-icon-close\" onclick=\"deleteEntry(" + pos + ")\"></span></div><div class=\"stickyTitle\"><h3 title=\"Doubleclick to change name\" class=\"entryTitle\" id=\"ti" + pos + "\">" + seq.name + "</h3><br><span class=\"info\" id=\"in" + pos + "\">" + seq.info + "</span> <span class=\"markInfo\" id=\"mi" + pos + "\"></span></div><svg class=\"entrySeq\" id=\"se" + pos + "\" width=\"100%\" height=\"300\"><g class=\"forms\"></g><g class=\"seqs\"></g></svg></div>";
@@ -175,7 +175,7 @@ function addSequence(seq, afterPos) {
             $("#li" + afterPos).after(nav);
         }
         //svg[pos] = new sequenceSVG(document.getElementById("se" + pos), seq);
-        sequenceEntry[pos] = new sequenceSVG($("#se" + pos), seq);
+        sequenceEntry[pos] = new SequenceSVG($("#se" + pos), seq);
         sequenceEntry[pos].draw();
     } else if (seq.type === 'alignmentDNA' || seq.type === 'alignmentProt') {
         var bla = "<div style=\"display:none\" class=\"entryAlignment\" id=\"en" + pos + "\"><div style=\"display:inline-block;float:right\" class=\"ui-state-default ui-corner-all\" title=\"Delete entry\" id=\"icons\"><span class=\"ui-icon ui-icon-close\" onclick=\"deleteEntry(" + pos + ")\"></span></div><div class=\"stickyTitle\"><h3 title=\"Doubleclick to change name\" class=\"entryTitle\" id=\"ti" + pos + "\">" + seq.name + "</h3><br><span class=\"info\" id=\"in" + pos + "\">" + seq.info + "</span> <span class=\"markInfo\" id=\"mi" + pos + "\"></span></div><svg class=\"entryAlign\" id=\"al" + pos + "\" width=\"100%\" height=\"300\"><g class=\"forms\"></g><g class=\"seqs\"></g></svg></div>";

@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools.sequenceHandling;
 
 /**
@@ -10,9 +5,6 @@ package com.genewarrior.genetools.sequenceHandling;
  * used for FASTA files
  */
 public class NamedSequenceAA implements Cloneable {
-    /**
-     *
-     */
     private static final long serialVersionUID = 7185806490860658722L;
 
     private SequenceAA seq;
@@ -22,8 +14,7 @@ public class NamedSequenceAA implements Cloneable {
     @Override
     public Object clone() {
         try {
-            NamedSequenceAA cloned = (NamedSequenceAA) super.clone();
-            return cloned;
+            return super.clone();
         } catch (CloneNotSupportedException e) {
             return null;
         }

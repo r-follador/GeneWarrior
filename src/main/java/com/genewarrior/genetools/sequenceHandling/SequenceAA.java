@@ -1,14 +1,5 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools.sequenceHandling;
 
-
-/**
- * @author kingcarlxx
- */
 public class SequenceAA extends Sequence {
     /**
      *

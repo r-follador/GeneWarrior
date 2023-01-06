@@ -2,7 +2,9 @@
 
 # [GeneWarrior](http://genewarrior.com)
 
-## What is this about
+![Screenshot](genewarrior_screenshot.png)
+
+## What is it about
 
 GeneWarrior is an online DNA and protein sequence manipulation tool to perform common tasks such as managing sequences,
 calculating the reverse complement of a sequence, translating nucleotide to protein sequences, creating alignments,
@@ -10,14 +12,14 @@ sequence logos, phylogenetic trees and designing PCR primers.
 
 It's designed to be very accessible (basically: paste your sequences into the website, do your manipulations, copy the
 result from the website), perform the common actions with a few clicks and be done within seconds, and this with a
-somewhat
+(hopefully)
 clear user interface.
 
-## Let me see how it works
+## What does it do?
 
-GeneWarrior is hosted on [GeneWarrior.com](http://genewarrior.com).
+GeneWarrior is hosted on [GeneWarrior.com](http://genewarrior.com), try it out.
 
-Try it out or look at a tutorial video
+Take a look at the tutorial video
 on [how to design PCR primers with GeneWarrior on Youtube](https://www.youtube.com/watch?v=Tt5Lo7cTSK0).
 
 There are a couple of tutorials available on how to perform the important
@@ -37,10 +39,13 @@ since approx. 9 years and running. I (and judging from the web analytics a handf
 been relying on it for day-to-day needs that occur in a biotech company on a regular basis, e.g.
 for quickly comparing a couple of sequence, translate DNA sequences to proteins etc.
 
-In early 2023, I finally got around to opensource the code. I did some very superficial modernization,
-which consists mainly of porting everything Java Servlet based to Spring Boot. The original servlet backend
+In early 2023, I finally got around to opensource the code. I did some very basic and superficial modernization,
+which consists mainly of porting everything from Java Servlets to Spring Boot. The original servlet backend
 was handling raw `HttpServletRequest` and `HttpServletResponse` objects, whereas Spring Boot makes the job
-much cleaner. Furthermore, database handling for sharing project now also relies on Spring Boot JPA.
+much cleaner. Furthermore, database handling for sharing projects now also relies on Spring Boot JPA.
+
+The actual DNA and Protein sequence is handled by a subset of my [GeneTools](https://github.com/r-follador/GeneTools)
+library (which is even older, think of it as a self-made BioJava).
 
 ### The Good
 
@@ -53,7 +58,7 @@ So no fancy session management is needed, which would allow easy scalability.
 ### The Bad and the Ugly
 
 Mainly: code quality represents my state of knowledge from approx. 9 years ago and also the fact
-that the code was partially written on the beaches in Indonesia.
+that the code was partially written on the beaches of Indonesia.
 
 Basically there's a single endpoint that receives a JSON request, where the type of action (e.g.
 reverse complement or alignment etc.) is defined as a member property. This was convenient with Servlets when handling

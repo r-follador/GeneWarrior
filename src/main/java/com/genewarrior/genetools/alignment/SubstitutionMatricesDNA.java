@@ -4,7 +4,6 @@ package com.genewarrior.genetools.alignment;
 /**
  * Data obtained from ftp://ftp.ncbi.nih.gov/blast/matrices/
  *
- * @author btserver
  */
 public class SubstitutionMatricesDNA {
 

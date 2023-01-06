@@ -1,16 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import java.io.Serializable;
 import java.util.Random;
 
-/**
- * @author btserver
- */
 public abstract class GeneWarriorElement implements Cloneable, Serializable {
     protected String shortcut;
     public final static byte Species = 1;

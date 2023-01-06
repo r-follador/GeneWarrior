@@ -13,7 +13,6 @@ import java.util.ArrayList;
 /**
  * Toolkit to handle <code>SequenceDNA</code>, do not directly access <code>SequenceDNA</code> methods.
  *
- * @author kingcarlxx
  */
 public class SequenceTools {
     final static Nucleotide nucl = new Nucleotide();
@@ -23,8 +22,8 @@ public class SequenceTools {
      * Replaces an aminoacid/nt in the given Sequence
      *
      * @param seq
-     * @param replace replace this aa/nt
-     * @param by      by this aa/nt
+     * @param replace replace this Aa/nt
+     * @param by      by this Aa/nt
      */
     static public void replaceLetter(Sequence seq, byte replace, byte by) {
         byte[] bs = seq.getByteArray();

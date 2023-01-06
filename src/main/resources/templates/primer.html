@@ -50,7 +50,7 @@
             $('#accordion').css('visibility', 'visible');
             sequence = data;
 
-            seqSVG = new sequenceSVG($("#primerSVG"), sequence);
+            seqSVG = new SequenceSVG($("#primerSVG"), sequence);
 
             seqSVG.charWidth = window.parent.document.getElementById('measureText').getComputedTextLength() / 12;
             seqSVG.belowHeight = 13;

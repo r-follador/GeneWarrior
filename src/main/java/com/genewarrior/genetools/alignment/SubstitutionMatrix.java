@@ -5,9 +5,6 @@
 
 package com.genewarrior.genetools.alignment;
 
-/**
- * @author btserver
- */
 public class SubstitutionMatrix {
     public final static byte AA = 0;
     public final static byte DNA = 1;

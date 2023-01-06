@@ -10,7 +10,6 @@ package com.genewarrior.genetools.alignment;
 /**
  * Data obtained from ftp://ftp.ncbi.nih.gov/blast/matrices/
  *
- * @author btserver
  */
 public final class SubstitutionMatricesBlosum2 {
 

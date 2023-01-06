@@ -2,9 +2,6 @@ package com.genewarrior.genewarrior;
 
 import java.util.ArrayList;
 
-/**
- * @author Rainer
- */
 public class outputTypes {
 
     public enum OutputType {
@@ -38,7 +35,7 @@ public class outputTypes {
 
     public static class alignmentDNA extends output {
 
-        public alignmentDNA(String name, ArrayList<dna> seqs, String pos, String info, String matches) {
+        public alignmentDNA(String name, ArrayList<Dna> seqs, String pos, String info, String matches) {
             super(OutputType.alignmentDNA);
             this.seqs = seqs;
             this.name = name;
@@ -48,7 +45,7 @@ public class outputTypes {
             this.mark = new ArrayList<>();
         }
 
-        public alignmentDNA(String name, ArrayList<dna> seqs, String pos, String info, String matches, ArrayList<mark> mark) {
+        public alignmentDNA(String name, ArrayList<Dna> seqs, String pos, String info, String matches, ArrayList<mark> mark) {
             super(OutputType.alignmentDNA);
             this.seqs = seqs;
             this.name = name;
@@ -62,13 +59,13 @@ public class outputTypes {
         String pos;
         String name;
         String matches;
-        ArrayList<dna> seqs;
+        ArrayList<Dna> seqs;
         ArrayList<mark> mark;
     }
 
     public static class alignmentProt extends output {
 
-        public alignmentProt(String name, ArrayList<aa> seqs, String pos, String info, String matches) {
+        public alignmentProt(String name, ArrayList<Aa> seqs, String pos, String info, String matches) {
             super(OutputType.alignmentProt);
             this.seqs = seqs;
             this.name = name;
@@ -78,7 +75,7 @@ public class outputTypes {
             this.mark = new ArrayList<>();
         }
 
-        public alignmentProt(String name, ArrayList<aa> seqs, String pos, String info, String matches, ArrayList<mark> mark) {
+        public alignmentProt(String name, ArrayList<Aa> seqs, String pos, String info, String matches, ArrayList<mark> mark) {
             super(OutputType.alignmentProt);
             this.seqs = seqs;
             this.name = name;
@@ -88,7 +85,7 @@ public class outputTypes {
             this.mark = mark;
         }
 
-        ArrayList<aa> seqs;
+        ArrayList<Aa> seqs;
         String info;
         String name;
         String pos;
@@ -106,16 +103,16 @@ public class outputTypes {
         String error;
     }
 
-    public static class customText extends output {
+    public static class CustomText extends output {
 
-        public customText(String title, String info, String html) {
+        public CustomText(String title, String info, String html) {
             super(OutputType.text);
             this.name = title;
             this.info = info;
             this.html = html;
         }
 
-        public customText(String title, String info, String html, String pos) {
+        public CustomText(String title, String info, String html, String pos) {
             super(OutputType.text);
             this.name = title;
             this.info = info;
@@ -129,9 +126,9 @@ public class outputTypes {
         String html;
     }
 
-    public static class dna extends output {
+    public static class Dna extends output {
 
-        public dna(String name, String sequence) {
+        public Dna(String name, String sequence) {
             super(OutputType.dna);
             this.name = name;
             this.sequence = sequence;
@@ -139,7 +136,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public dna(String name, String sequence, ArrayList<mark> mark) {
+        public Dna(String name, String sequence, ArrayList<mark> mark) {
             super(OutputType.dna);
             this.name = name;
             this.sequence = sequence;
@@ -147,7 +144,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public dna(String name, String sequence, ArrayList<mark> mark, String pos) {
+        public Dna(String name, String sequence, ArrayList<mark> mark, String pos) {
             super(OutputType.dna);
             this.name = name;
             this.sequence = sequence;
@@ -156,7 +153,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public dna(String name, String sequence, String pos) {
+        public Dna(String name, String sequence, String pos) {
             super(OutputType.dna);
             this.name = name;
             this.sequence = sequence;
@@ -176,21 +173,21 @@ public class outputTypes {
         String info;
     }
 
-    public static class shareInfo extends output {
+    public static class ShareInfo extends output {
 
         String dbKey;
 
-        public shareInfo(String dbKey) {
+        public ShareInfo(String dbKey) {
             super(OutputType.shareInfo);
             this.dbKey = dbKey;
         }
     }
 
-    public static class translateWindowClass extends output {
+    public static class TranslateWindowClass extends output {
 
         String seq;
 
-        public translateWindowClass(String seq, String f1, String f2, String f3, String tf1, String tf2, String tf3) {
+        public TranslateWindowClass(String seq, String f1, String f2, String f3, String tf1, String tf2, String tf3) {
             super(OutputType.translateWindow);
             this.seq = seq;
             this.f1 = f1;
@@ -209,9 +206,9 @@ public class outputTypes {
         String tf3;
     }
 
-    public static class aa extends output {
+    public static class Aa extends output {
 
-        public aa(String name, String sequence) {
+        public Aa(String name, String sequence) {
             super(OutputType.aa);
             this.name = name;
             this.sequence = sequence;
@@ -219,7 +216,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public aa(String name, String sequence, ArrayList<mark> mark) {
+        public Aa(String name, String sequence, ArrayList<mark> mark) {
             super(OutputType.aa);
             this.name = name;
             this.sequence = sequence;
@@ -227,7 +224,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public aa(String name, String sequence, ArrayList<mark> mark, String pos) {
+        public Aa(String name, String sequence, ArrayList<mark> mark, String pos) {
             super(OutputType.aa);
             this.name = name;
             this.sequence = sequence;
@@ -236,7 +233,7 @@ public class outputTypes {
             setInfo();
         }
 
-        public aa(String name, String sequence, String pos) {
+        public Aa(String name, String sequence, String pos) {
             super(OutputType.aa);
             this.name = name;
             this.sequence = sequence;
@@ -248,7 +245,7 @@ public class outputTypes {
         private void setInfo() {
             int length = sequence.length();
             int stops = length - sequence.replace("*", "").length();
-            info = "Protein: " + (length - stops) + " aa" + (stops > 0 ? "; " + stops + " stop" : "");
+            info = "Protein: " + (length - stops) + " Aa" + (stops > 0 ? "; " + stops + " stop" : "");
         }
 
         String pos = "-1";
@@ -258,18 +255,18 @@ public class outputTypes {
         String info;
     }
 
-    public static class primer3 extends output {
+    public static class Primer3 extends output {
 
-        ArrayList<primerPair> primerPairs = new ArrayList<>();
+        ArrayList<PrimerPair> primerPairs = new ArrayList<>();
         String explanation = "";
         String error = "";
 
-        public primer3() {
+        public Primer3() {
             super(OutputType.primer3);
         }
 
 
-        public static class primerPair {
+        public static class PrimerPair {
 
             String leftSequence;
             String rightSequence;
@@ -286,7 +283,7 @@ public class outputTypes {
             int productSize;
             boolean hasInternal = false;
 
-            public primerPair(String leftSequence, String rightSequence, String internalSequence, int leftPosition, int rightPosition, int internalPosition, float leftTm, float rightTm, float internalTm, int leftGC, int rightGC, int internalGC, int productSize) {
+            public PrimerPair(String leftSequence, String rightSequence, String internalSequence, int leftPosition, int rightPosition, int internalPosition, float leftTm, float rightTm, float internalTm, int leftGC, int rightGC, int internalGC, int productSize) {
                 this.leftSequence = leftSequence;
                 this.rightSequence = rightSequence;
                 this.internalSequence = internalSequence;
@@ -303,7 +300,7 @@ public class outputTypes {
                 hasInternal = true;
             }
 
-            public primerPair(String leftSequence, String rightSequence, int leftPosition, int rightPosition, float leftTm, float rightTm, int leftGC, int rightGC, int productSize) {
+            public PrimerPair(String leftSequence, String rightSequence, int leftPosition, int rightPosition, float leftTm, float rightTm, int leftGC, int rightGC, int productSize) {
                 this.leftSequence = leftSequence;
                 this.rightSequence = rightSequence;
                 this.leftPosition = leftPosition;

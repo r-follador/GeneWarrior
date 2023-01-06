@@ -319,20 +319,20 @@ svg.prototype.drawMark = function (start, stop, color) {
 };
 
 //SequenceSVG
-sequenceSVG.prototype = new svg();
-sequenceSVG.prototype.constructor = sequenceSVG;
+SequenceSVG.prototype = new svg();
+SequenceSVG.prototype.constructor = SequenceSVG;
 
-function sequenceSVG(svgID, data) {
+function SequenceSVG(svgID, data) {
     this.svgID = svgID;
     this.data = data;
 }
 
 
-sequenceSVG.prototype.getMaxSeqLength = function () {
+SequenceSVG.prototype.getMaxSeqLength = function () {
     return this.data.sequence.length;
 };
 
-sequenceSVG.prototype.drawSequence = function (aboveHeight, lineheight) {
+SequenceSVG.prototype.drawSequence = function (aboveHeight, lineheight) {
     var x = this.marginleft;
     var line = 0;
     var seqLength = this.getMaxSeqLength();
@@ -347,7 +347,7 @@ sequenceSVG.prototype.drawSequence = function (aboveHeight, lineheight) {
     return line; //totalheight
 };
 
-sequenceSVG.prototype.getXY = function (pos) {
+SequenceSVG.prototype.getXY = function (pos) {
     var maxLength = this.getMaxSeqLength();
     var lineheight = this.getLineheight();
     if (pos >= maxLength)
@@ -358,7 +358,7 @@ sequenceSVG.prototype.getXY = function (pos) {
     return {x: (x + this.marginleft), y: y, height: (lineheight - this.getAboveHeight() - this.getBelowHeight() - 5)};
 };
 
-sequenceSVG.prototype.getNucPosition = function (x, y) {
+SequenceSVG.prototype.getNucPosition = function (x, y) {
     var lineheight = this.getLineheight();
     x -= this.marginleft;
     var maxLength = this.getMaxSeqLength();
@@ -369,15 +369,15 @@ sequenceSVG.prototype.getNucPosition = function (x, y) {
     return pos;
 };
 
-sequenceSVG.prototype.getLineheight = function () {
+SequenceSVG.prototype.getLineheight = function () {
     return (5 + this.getAboveHeight() + this.fontHeight + this.getBelowHeight());
 };
 
-sequenceSVG.prototype.drawClassSpecific = function () {
+SequenceSVG.prototype.drawClassSpecific = function () {
 
 };
 
-sequenceSVG.prototype.drawFind = function (start, stop, row) {
+SequenceSVG.prototype.drawFind = function (start, stop, row) {
     var s = this.getXY(start);
     var e = this.getXY(stop);
     var lineheight = this.getLineheight();

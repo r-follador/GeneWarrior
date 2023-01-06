@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import com.genewarrior.genetools.sequenceHandling.*;
@@ -13,7 +8,6 @@ import java.util.Arrays;
 /**
  * Feature class for MoleculeDNA. Contains type (String), name (String[2]), and <code>Position</code> of a single Feature. If Feature is a Protein-coding segment add also <code>proteinProduct</code>. A note (String) and <code>additionalInfo</code> can also be added. Everything is added using the constructor.
  *
- * @author kingcarlxx
  */
 public class Feature extends GeneWarriorElement implements Cloneable {
 
@@ -89,7 +83,7 @@ public class Feature extends GeneWarriorElement implements Cloneable {
             return;
         }
         byte[] seqarray = ProteinProperties.getSequence().getByteArray();
-        seqarray[0] = Aminoacids._M; //set first aa to M
+        seqarray[0] = Aminoacids._M; //set first Aa to M
         if (seqarray[seqarray.length - 1] == Aminoacids._TERM) //Remove the terminator (*)
             seqarray = Arrays.copyOf(seqarray, seqarray.length - 1);
         ProteinProperties.getSequence().setByteArray(seqarray);

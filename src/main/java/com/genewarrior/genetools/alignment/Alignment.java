@@ -3,9 +3,6 @@ package com.genewarrior.genetools.alignment;
 import com.genewarrior.genetools.sequenceHandling.Aminoacids;
 import com.genewarrior.genetools.sequenceHandling.Nucleotide;
 
-/**
- * @author btserver
- */
 public class Alignment {
     public byte alignmenttype = 0;
     public byte[] a;

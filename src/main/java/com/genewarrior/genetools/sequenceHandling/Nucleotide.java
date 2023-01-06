@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools.sequenceHandling;
 
 import java.util.ArrayList;
@@ -12,7 +7,6 @@ import java.util.Map;
 /**
  * This class should only be accessed by SequenceDNA and SequenceTools. Not directly.
  *
- * @author kingcarlxx
  */
 public class Nucleotide {
 

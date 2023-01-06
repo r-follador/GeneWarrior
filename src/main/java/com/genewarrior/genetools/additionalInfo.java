@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import java.io.Serializable;
@@ -12,13 +7,9 @@ import java.util.ArrayList;
  * additionalInfo for any feature; consists of headers, titles, and texts
  * use <code>add(String header, String title, String text)</add> to add new entries
  *
- * @author kingcarlxx
  */
 public class additionalInfo implements Cloneable, Serializable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -7899727285987903539L;
     ArrayList<String> headers = new ArrayList<String>();
     ArrayList<String> titles = new ArrayList<String>();

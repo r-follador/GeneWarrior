@@ -4,9 +4,6 @@ import com.genewarrior.genetools.Feature;
 import com.genewarrior.genetools.sequenceHandling.NamedSequenceAA;
 import com.genewarrior.genetools.sequenceHandling.NamedSequenceDNA;
 
-/**
- * @author btserver
- */
 public class Rank implements Comparable<Rank> {
     public int rank;
     public Feature feature;

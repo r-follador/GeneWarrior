@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import com.genewarrior.genetools.sequenceHandling.Position;
@@ -14,12 +9,8 @@ import java.util.Iterator;
 /**
  * Either DNA- or RNA-molecule. Use <code>getType()</code> to assess which one it is
  *
- * @author kingcarlxx
  */
 public class Contig extends GeneWarriorElement implements Cloneable {
-    /**
-     *
-     */
     private static final long serialVersionUID = 7689206690960653792L;
     private SequenceDNA sequence;
     protected additionalInfo moreInfos = new additionalInfo();
@@ -181,7 +172,7 @@ public class Contig extends GeneWarriorElement implements Cloneable {
     }
 
     /**
-     * @return "rna" if molecule is a rna-molecule, "dna" if molecule is a dna-molecule. (Actually returns .isRNA() of SequenceDNA)
+     * @return "rna" if molecule is a rna-molecule, "Dna" if molecule is a Dna-molecule. (Actually returns .isRNA() of SequenceDNA)
      */
     public String getType() {
         if (sequence.isRNA())

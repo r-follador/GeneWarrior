@@ -1,15 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import java.util.ArrayList;
 
-/**
- * @author btserver
- */
 public class Species extends GeneWarriorElement {
     private static final long serialVersionUID = 604094988740974903L;
     public String name = "blabla12";

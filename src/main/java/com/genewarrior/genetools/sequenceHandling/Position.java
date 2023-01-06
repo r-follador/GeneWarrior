@@ -10,7 +10,6 @@ import java.io.Serializable;
 /**
  * Position on Molecule
  *
- * @author kingcarlxx
  */
 public class Position implements Serializable, Cloneable {
     /**
@@ -57,8 +56,6 @@ public class Position implements Serializable, Cloneable {
      * Checks if given Integer of this <code>Position</code>
      *
      * @param integer
-     * @param pos
-     * @param isCircular indicates if the positions are on a circular molecule
      * @return
      */
     public boolean isIntegerInside(int integer) {
@@ -70,7 +67,6 @@ public class Position implements Serializable, Cloneable {
      * Checks if <code>Position</code> pos1 is completely inside this <code>Position</code>.
      *
      * @param pos1
-     * @param pos2
      * @return
      */
     public boolean isPositionInside(Position pos1) {

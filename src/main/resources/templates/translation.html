@@ -35,7 +35,7 @@
                                 alert(output[0].error);
                             } else {
                                 sequence = data;
-                                seqSVG = new sequenceSVG($('#transSVG'), sequence);
+                                seqSVG = new SequenceSVG($('#transSVG'), sequence);
                                 seqSVG.charWidth = window.parent.document.getElementById('measureText').getComputedTextLength() / 12;
                                 seqSVG.belowHeight = (3 * translHeight) + translMargin;
                                 seqSVG.drawClassSpecific = function () {

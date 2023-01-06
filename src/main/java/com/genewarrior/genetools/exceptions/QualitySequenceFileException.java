@@ -1,6 +1,5 @@
 package com.genewarrior.genetools.exceptions;
 
-@SuppressWarnings("serial")
 public class QualitySequenceFileException extends Exception {
     public final static int MALFORMATTED_INPUT_FILE = 1;
     public final static int CAST_ERROR = 2;

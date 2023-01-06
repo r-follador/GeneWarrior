@@ -105,7 +105,7 @@ public class AlignmentTools {
     }
 
     /**
-     * Quick align the query aa to the features in the ArrayList search. Orders according to descending score
+     * Quick align the query Aa to the features in the ArrayList search. Orders according to descending score
      *
      * @param query
      * @param search ArrayList of features
@@ -129,7 +129,7 @@ public class AlignmentTools {
     }
 
     /**
-     * Quick align the query dna to the features in the ArrayList search. Orders according to descending score
+     * Quick align the query Dna to the features in the ArrayList search. Orders according to descending score
      *
      * @param query
      * @param search ArrayList of features
@@ -153,7 +153,7 @@ public class AlignmentTools {
     }
 
     /**
-     * Quick align the query dna to an Array of <code>NamedSequenceDNA</code> in the ArrayList search. Orders according to descending score
+     * Quick align the query Dna to an Array of <code>NamedSequenceDNA</code> in the ArrayList search. Orders according to descending score
      *
      * @param query
      * @param search ArrayList of features
@@ -175,7 +175,7 @@ public class AlignmentTools {
     }
 
     /**
-     * Quick align the query dna to an Array of <code>NamedSequenceDNA</code> in the ArrayList search. Orders according to descending score
+     * Quick align the query Dna to an Array of <code>NamedSequenceDNA</code> in the ArrayList search. Orders according to descending score
      *
      * @param query
      * @param search ArrayList of features

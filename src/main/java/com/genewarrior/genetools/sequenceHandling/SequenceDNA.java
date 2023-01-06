@@ -1,19 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools.sequenceHandling;
 
-
-/**
- * @author kingcarlxx
- */
 public class SequenceDNA extends Sequence {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -913788407021051520L;
     private final static Nucleotide nucl = new Nucleotide();
     private boolean isRNA = false;

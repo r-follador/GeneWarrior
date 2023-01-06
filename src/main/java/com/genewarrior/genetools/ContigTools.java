@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.genewarrior.genetools;
 
 import com.genewarrior.genetools.sequenceHandling.Position;
@@ -15,7 +10,6 @@ import java.util.ArrayList;
 /**
  * Methods to handle <code>MoleculeDNA</code> Objects. All static methods.
  *
- * @author kingcarlxx
  */
 public class ContigTools {
 

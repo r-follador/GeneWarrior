@@ -48,11 +48,11 @@ public class Aminoacids {
     Nucleotide nucl = new Nucleotide();
 
     /**
-     * OneLetterChar looks up bytes and gives one letter aa codes
+     * OneLetterChar looks up bytes and gives one letter Aa codes
      */
     public final char[] OneLetterChar = new char[alphabetSize];
     /**
-     * ThreeLetterString looks up bytes and gives three letter aa codes
+     * ThreeLetterString looks up bytes and gives three letter Aa codes
      */
     public final String[] ThreeLetterString = new String[alphabetSize];
     /**
@@ -258,10 +258,10 @@ public class Aminoacids {
     }
 
     /**
-     * Converts String sequence (one letter aa code) to Byte Array.
+     * Converts String sequence (one letter Aa code) to Byte Array.
      *
      * @param seq Protein-Sequence to convert to Byte[]
-     * @return byte for each nucleotide or gap if no valid aa
+     * @return byte for each nucleotide or gap if no valid Aa
      */
     public byte[] string2bytearray(String seq) {
         byte[] nucleotides = new byte[seq.length()];
@@ -276,7 +276,7 @@ public class Aminoacids {
     }
 
     /**
-     * Converts Byte Array to String protein-sequence (one-letter aa code)
+     * Converts Byte Array to String protein-sequence (one-letter Aa code)
      *
      * @param seq
      * @return
@@ -292,7 +292,7 @@ public class Aminoacids {
     }
 
     /**
-     * Converts Byte Array to String protein-sequence (three-letter aa code)
+     * Converts Byte Array to String protein-sequence (three-letter Aa code)
      *
      * @param seq
      * @return
@@ -311,7 +311,7 @@ public class Aminoacids {
     }
 
     /**
-     * Changes Byte in given Byte-Array to another Byte. (Change all aa in sequence).
+     * Changes Byte in given Byte-Array to another Byte. (Change all Aa in sequence).
      *
      * @param seq
      * @param fromByte
