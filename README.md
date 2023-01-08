@@ -73,7 +73,7 @@ plain JavaScript with the same amount of code.
 
 This repository is a Spring Boot project created in IntelliJ IDEA (Java 17) with Gradle.
 
-### Requirements
+### Bare Metal Installation
 
 #### PostgreSQL
 
@@ -106,5 +106,24 @@ GeneWarrior calls these programs as a `Process`.
 - Primer3 https://github.com/primer3-org
 - WebLogo 3 https://github.com/WebLogo/weblogo
 - Muscle http://www.drive5.com/muscle/
+
+### Docker Installation
+
+This is quite rough, but it should give you a running application in a single command.
+
+#### Requirements
+
+- docker
+- docker-compose
+
+#### Setup
+
+```shell
+docker-compose up
+```
+
+#### Use
+
+The application will be available at [localhost:8080](http://localhost:8080)
 
 

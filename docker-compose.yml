@@ -1,0 +1,20 @@
+version: "3"
+services:
+  gene-warrior-app:
+    image: gene-warrior:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - gene-warrior-db
+    env_file:
+      - .env
+    ports: [ '8080:8080' ]
+#    entrypoint: /bin/sh
+  gene-warrior-db:
+    image: postgres:15-bullseye
+    ports: ['5432:5432']
+    env_file:
+      - .env
+    volumes:
+      - ./volumes/postgres-data:/var/lib/postgresql/data:rw

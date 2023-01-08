@@ -1,0 +1,13 @@
+.idea
+build
+.gradle
+README.md
+LICENSE
+gradlew
+gradlew.bat
+genewarrior_screenshot.png
+target
+.git
+.gitignore
+volumes
+volumes/**
