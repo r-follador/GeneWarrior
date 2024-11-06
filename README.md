@@ -36,7 +36,7 @@ the backend was based on Java Servlets and Java Servlet Pages, the front end on 
 
 The application is hosted from the beginning on a small DigitalOcean droplet where it does its job faithfully
 since approx. 9 years and running. I (and judging from the web analytics a handful of other users) have
-been relying on it for day-to-day needs that occur in a biotech company on a regular basis, e.g.
+been relying on it for basic day-to-day needs that occur in a biotech company, e.g.
 for quickly comparing a couple of sequence, translate DNA sequences to proteins etc.
 
 In early 2023, I finally got around to opensource the code. I did some very basic and superficial modernization,
@@ -66,7 +66,7 @@ raw `HttpServletRequest`s, but the lack of separation makes the code not very ni
 (also on the frontend).
 
 I have not updated the frontend (which includes -don't laugh- jQuery v1.11), that would definitely
-be next on the To Do list. Nowadays pretty much everything where jQuery was required is doable in
+be the next thing on the To Do list. Nowadays pretty much everything where jQuery was required is doable in
 plain JavaScript with the same amount of code.
 
 ## How to install
