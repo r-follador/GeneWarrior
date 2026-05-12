@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="description"
@@ -268,7 +268,7 @@
     <ul style="display:none" id="sortable">
     </ul>
 </div>
-<script th:if="${link}" type="text/javascript">loadFromDatabase([(${link})]);</script>
+<script th:if="${link}" type="text/javascript">loadFromDatabase([(${link})])</script>
 <script th:unless="${link}" type="text/javascript">welcomeWindow();</script>
 </body>
 </html>
