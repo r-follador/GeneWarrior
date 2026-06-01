@@ -13,7 +13,7 @@ public class ProjectEntity implements Serializable {
     @Getter
     @Setter
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long identity;
 
     @Getter
@@ -22,7 +22,7 @@ public class ProjectEntity implements Serializable {
 
     @Getter
     @Setter
-    @Lob
+    @Column(columnDefinition = "text")
     private String text;
 
     @Getter
