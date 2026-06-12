@@ -1,4 +1,4 @@
-import type {ApiErrorDto, ProjectDto, SequenceDto, ToolJobDto, TranslationFramesDto} from './types';
+import type {AlignmentDto, ApiErrorDto, ProjectDto, SequenceDto, ToolJobDto, TranslationFramesDto} from './types';
 
 const jsonHeaders = {'Content-Type': 'application/json'};
 
@@ -55,6 +55,14 @@ export const apiClient = {
             method: 'POST',
             headers: jsonHeaders,
             body: JSON.stringify({sequence, translationTable})
+        });
+    },
+
+    pairwiseAlignment(sequences: SequenceDto[], mode: 'CFE' | 'LOCAL'): Promise<AlignmentDto> {
+        return request('/api/alignments/pairwise', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify({sequences, mode})
         });
     },
 

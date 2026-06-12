@@ -5,6 +5,7 @@ export interface SearchHit {
     start: number;
     end: number;
     strand?: 'forward' | 'reverse';
+    row?: number;
 }
 
 const dnaQueryMatches: Record<string, Set<string>> = {

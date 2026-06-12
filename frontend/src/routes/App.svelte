@@ -1,7 +1,7 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { apiClient, ApiError } from '../lib/api/client';
-  import type { SequenceDto, SequenceMarkDto, TranslationFramesDto } from '../lib/api/types';
+  import type { AlignmentDto, SequenceDto, SequenceMarkDto, TranslationFramesDto } from '../lib/api/types';
   import AlignmentViewer from '../lib/components/AlignmentViewer.svelte';
   import SequenceViewer from '../lib/components/SequenceViewer.svelte';
   import { normalizedRange } from '../lib/selection/selection';
@@ -10,16 +10,18 @@
   import { selectionStore } from '../lib/stores/selectionStore';
   import { uiStore } from '../lib/stores/uiStore';
 
-  const alignment = {
+  const exampleAlignment: AlignmentDto = {
     id: 'example-alignment',
     name: 'LacZ protein alignment',
-    kind: 'ALIGNMENT',
+    kind: 'PROTEIN',
     sequences: [
       { name: 'L. delbrueckii', value: 'GSLLEVSRQEVGFRNFELKDGIMYLNGQRIVFKGANRHEFDSKLGRAITEEDMIWDIKTMKRSNINAVRCSHYPNQSLFYRLCDKYGLYVIDEANLESHGTWEKVGGHEDP' },
       { name: 'L. lactis', value: 'GAVFHKETKKIGIRKIAIEKGQLKINGKALLVRGVNKHEFTPEHGYVVSEEVMIKDIKLMKEHNFNAVRCSHYPNDSRWYELCDEYGLYVMDEANIETHGM---------T' },
       { name: 'E. coli', value: 'GTLIEAEACDVGFREVRIENGLLLLNGKPLLIRGVNRHEHHPLHGQVMDEQTMVQDILLMKQNNFNAVRCSHYPNHPLWYTLCDRYGLYVVDEANIETHGM---------V' }
     ],
-    consensus: '* :  .  .:*:*:. ::.* : :**: ::..*.*.**. .  * .: *: *:.**  **  *:********** . :* *** *****:****:*:**           '
+    consensus: '* :  .  .:*:*:. ::.* : :**: ::..*.*.**. .  * .: *: *:.**  **  *:********** . :* *** *****:****:*:**           ',
+    score: 0,
+    marks: []
   };
 
   const translationTables = [
@@ -46,11 +48,13 @@
   let importText = '';
   let selectedIds = ['example-lactis'];
   let activeEntryId = 'example-lactis';
-  let entryOrder = ['example-ecoli', 'example-lactis', 'example-protein', alignment.id];
+  let alignments: AlignmentDto[] = [exampleAlignment];
+  let entryOrder = ['example-ecoli', 'example-lactis', 'example-protein', exampleAlignment.id];
   let draggedEntryId = '';
   let dropIndicator: { entryId: string; position: 'before' | 'after' } | undefined;
   let removingIds: string[] = [];
   let enteringIds: string[] = [];
+  let collapsedEntryIds: string[] = [];
   let translationTable = 1;
   let openTool = 'transform';
   let highlightColor = '#f4c95d';
@@ -75,22 +79,49 @@
   let findInput: HTMLInputElement;
 
   $: project = $projectStore;
-  $: syncEntryOrder(project.sequences.map((sequence) => sequence.id ?? ''));
+  $: syncEntryOrder(project.sequences.map((sequence) => sequence.id ?? ''), alignments.map((entry) => entry.id));
   $: selected = project.sequences.find((sequence) => sequence.id === activeEntryId);
   $: selectedDnaSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence?.kind === 'DNA');
   $: selectedProteinSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence?.kind === 'PROTEIN');
+  $: selectedPairwiseSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence !== undefined);
+  $: canCreatePairwiseAlignment = selectedPairwiseSequences.length === 2 && selectedPairwiseSequences[0].kind === selectedPairwiseSequences[1].kind;
+  $: selectedAlignment = entryAlignment(activeEntryId);
   $: selectionLabel = selectedIds.length === 0 ? 'No entries selected' : `${selectedIds.length} ${selectedIds.length === 1 ? 'entry' : 'entries'} selected`;
   $: markTarget = activeSequenceRange($selectionStore);
+  $: alignmentMarkTarget = activeAlignmentRange($selectionStore);
+  $: canAnnotateRange = Boolean(markTarget || alignmentMarkTarget);
   $: visibleTranslationRange = translationRange ?? translationHoverRange;
 
-  function syncEntryOrder(sequenceIds: string[]) {
-    const availableIds = [...sequenceIds.filter(Boolean), alignment.id];
+  function syncEntryOrder(sequenceIds: string[], alignmentIds: string[]) {
+    const availableIds = [...sequenceIds.filter(Boolean), ...alignmentIds];
     const nextOrder = [...entryOrder.filter((id) => availableIds.includes(id)), ...availableIds.filter((id) => !entryOrder.includes(id))];
     if (nextOrder.join('|') !== entryOrder.join('|')) entryOrder = nextOrder;
   }
 
   function isEntrySelected(id: string) {
     return selectedIds.includes(id);
+  }
+
+  function isEntryCollapsed(id: string) {
+    return collapsedEntryIds.includes(id);
+  }
+
+  function toggleEntryCollapsed(id: string) {
+    collapsedEntryIds = collapsedEntryIds.includes(id) ? collapsedEntryIds.filter((entryId) => entryId !== id) : [...collapsedEntryIds, id];
+  }
+
+  function activateEntryHeader(id: string) {
+    if (collapsedEntryIds.includes(id)) {
+      collapsedEntryIds = collapsedEntryIds.filter((entryId) => entryId !== id);
+      return;
+    }
+    toggleEntry(id);
+  }
+
+  function handleEntryHeaderKeydown(id: string, event: KeyboardEvent) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    activateEntryHeader(id);
   }
 
   function toggleEntry(id: string, scroll = false) {
@@ -161,6 +192,10 @@
     return sequences.find((sequence) => sequence.id === id);
   }
 
+  function entryAlignment(id: string, entries = alignments) {
+    return entries.find((entry) => entry.id === id);
+  }
+
   function startReorder(id: string, event: DragEvent) {
     draggedEntryId = id;
     event.dataTransfer?.setData('text/plain', id);
@@ -191,9 +226,11 @@
     removingIds = idsToDelete;
     await new Promise((resolve) => setTimeout(resolve, 220));
     projectStore.removeSequences(idsToDelete);
+    alignments = alignments.filter((entry) => !idsToDelete.includes(entry.id));
     entryOrder = entryOrder.filter((id) => !idsToDelete.includes(id));
     removingIds = [];
     selectedIds = [];
+    collapsedEntryIds = collapsedEntryIds.filter((id) => !idsToDelete.includes(id));
     activeEntryId = '';
     selectionStore.set({});
   }
@@ -251,13 +288,19 @@
     return sequence && sequence.id === selection.entryId && range ? { sequence, range, direction: selectionDirection(selection) } : undefined;
   }
 
-  function sequenceWithFindMarks(sequence: SequenceDto): SequenceDto {
-    const marks = findHits
+  function activeAlignmentRange(selection = $selectionStore) {
+    const range = normalizedRange(selection);
+    const alignment = entryAlignment(selection.entryId ?? '');
+    return alignment && range ? { alignment, range, direction: selectionDirection(selection) } : undefined;
+  }
+
+  function sequenceWithFindMarks(sequence: SequenceDto, hits = findHits): SequenceDto {
+    const marks = hits
       .filter((hit) => hit.entryId === sequence.id)
       .map((hit) => ({
         start: hit.start,
         end: hit.end + 1,
-        color: hit.strand === 'reverse' ? '#d99a92' : '#9ab8d3',
+        color: '#b9dfff',
         type: 'FIND_HIT' as 'HIGHLIGHT'
       }));
     return marks.length ? { ...sequence, marks: [...sequence.marks, ...marks] } : sequence;
@@ -319,6 +362,38 @@
     if (type === 'ANNOTATION') annotationLabel = '';
   }
 
+  function addAnnotation() {
+    const target = markTarget;
+    const alignmentTarget = alignmentMarkTarget;
+    const annotation = annotationLabel.trim();
+    if (!annotation) return;
+    if (target) {
+      addMark('ANNOTATION');
+      return;
+    }
+    if (!alignmentTarget) return;
+    const start = alignmentTarget.range.start;
+    const end = alignmentTarget.range.end + 1;
+    const newMark: SequenceMarkDto = {
+      start,
+      end,
+      color: annotationColor,
+      annotation,
+      type: 'ANNOTATION',
+      direction: alignmentTarget.direction
+    };
+    alignments = alignments.map((entry) => entry.id === alignmentTarget.alignment.id
+      ? {
+          ...entry,
+          marks: [
+            ...(entry.marks ?? []).flatMap((mark) => mark.type === 'ANNOTATION' ? subtractRange(mark, start, end) : [mark]),
+            newMark
+          ]
+        }
+      : entry);
+    annotationLabel = '';
+  }
+
   function applyHighlight(color: string) {
     highlightColor = color;
     addMark('HIGHLIGHT');
@@ -330,6 +405,17 @@
 
   function removeFormatting() {
     const target = markTarget;
+    const alignmentTarget = alignmentMarkTarget;
+    if (!target && !alignmentTarget) return;
+    if (alignmentTarget && !target) {
+      alignments = alignments.map((entry) => entry.id === alignmentTarget.alignment.id
+        ? {
+            ...entry,
+            marks: (entry.marks ?? []).flatMap((mark) => subtractRange(mark, alignmentTarget.range.start, alignmentTarget.range.end + 1))
+          }
+        : entry);
+      return;
+    }
     if (!target) return;
     projectStore.replaceSequence({
       ...target.sequence,
@@ -371,10 +457,11 @@
     const range = normalizedRange($selectionStore);
     if (!$selectionStore.entryId || !range || !event.clipboardData) return;
     const sequence = project.sequences.find((entry) => entry.id === $selectionStore.entryId);
+    const alignmentEntry = entryAlignment($selectionStore.entryId);
     const text = sequence
       ? sequence.sequence.slice(range.start, range.end + 1)
-      : $selectionStore.entryId === alignment.id
-        ? alignment.sequences.map((entry) => entry.value.slice(range.start, range.end + 1)).join('\n')
+      : alignmentEntry
+        ? alignmentEntry.sequences.map((entry) => entry.value.slice(range.start, range.end + 1)).join('\n')
         : '';
     if (!text) return;
     event.preventDefault();
@@ -390,10 +477,19 @@
       currentFindHit = -1;
       return;
     }
-    findHits = project.sequences.flatMap((sequence) => {
+    const sequenceHits = project.sequences.flatMap((sequence) => {
       if (findType === 'DNA' && sequence.kind === 'DNA') return findDnaHits(sequence.id ?? '', sequence.sequence, query, findBothStrands);
       if (findType === 'PROTEIN' && sequence.kind === 'PROTEIN') return findProteinHits(sequence.id ?? '', sequence.sequence, query);
       return [];
+    });
+    const alignmentHits = alignments.flatMap((entry) => {
+      if (findType === 'DNA' && entry.kind === 'DNA') return entry.sequences.flatMap((sequence, row) => findDnaHits(entry.id, sequence.value, query, findBothStrands).map((hit) => ({ ...hit, row })));
+      if (findType === 'PROTEIN' && entry.kind === 'PROTEIN') return entry.sequences.flatMap((sequence, row) => findProteinHits(entry.id, sequence.value, query).map((hit) => ({ ...hit, row })));
+      return [];
+    });
+    findHits = [...sequenceHits, ...alignmentHits].sort((a, b) => {
+      const entryOrderDelta = entryOrder.indexOf(a.entryId) - entryOrder.indexOf(b.entryId);
+      return entryOrderDelta || (a.row ?? -1) - (b.row ?? -1) || a.start - b.start || a.end - b.end || (a.strand === 'reverse' ? 1 : 0) - (b.strand === 'reverse' ? 1 : 0);
     });
     currentFindHit = -1;
     if (findHits.length > 0) goToFindHit(1);
@@ -492,6 +588,23 @@
       }
       animateEntriesIn(createdIds);
       if (createdIds.length) ensureEntrySelected(createdIds.at(-1) ?? '');
+    });
+  }
+
+  async function createPairwiseAlignment(mode: 'CFE' | 'LOCAL') {
+    if (!canCreatePairwiseAlignment) return;
+    const sources = selectedPairwiseSequences;
+    await withBusy(async () => {
+      const alignment = await apiClient.pairwiseAlignment(sources, mode);
+      alignments = [...alignments, alignment];
+      const sourceIds = sources.flatMap((source) => source.id ? [source.id] : []);
+      const sourceId = sourceIds
+        .slice()
+        .sort((a, b) => entryOrder.indexOf(a) - entryOrder.indexOf(b))
+        .at(-1) ?? '';
+      insertEntryIdsAfter(sourceId, [alignment.id]);
+      animateEntriesIn([alignment.id]);
+      ensureEntrySelected(alignment.id);
     });
   }
 
@@ -725,11 +838,12 @@
   <aside class="navigator-panel">
     <div class="panel-title">
       <span>Project Navigator</span>
-      <small>{project.sequences.length + 1} entries</small>
+      <small>{project.sequences.length + alignments.length} entries</small>
     </div>
     <nav>
       {#each entryOrder as entryId}
         {@const sequence = entrySequence(entryId, project.sequences)}
+        {@const alignment = alignments.find((entry) => entry.id === entryId)}
         {#if sequence}
           <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
             <span class:protein={sequence.kind === 'PROTEIN'} class="entry-icon">{sequence.kind === 'DNA' ? 'D' : 'P'}</span>
@@ -738,7 +852,7 @@
               <small>{sequence.kind === 'DNA' ? `${sequence.sequence.length} bp` : `${sequence.sequence.length} aa`}</small>
             </span>
           </button>
-        {:else if entryId === alignment.id}
+        {:else if alignment}
           <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
             <span class="entry-icon alignment-icon">A</span>
             <span>
@@ -772,11 +886,13 @@
     <div class="entry-stack">
       {#each entryOrder as entryId}
         {@const sequence = entrySequence(entryId, project.sequences)}
+        {@const alignment = alignments.find((entry) => entry.id === entryId)}
         {#if sequence}
-        {@const renderedSequence = sequenceWithFindMarks(sequence)}
+        {@const renderedSequence = sequenceWithFindMarks(sequence, findHits)}
         {@const summary = rangeSummary(entryId, sequence.kind === 'DNA' ? 'bp' : 'aa', sequence.kind, $selectionStore)}
-        <div id={`entry-${entryId}`} class:selected={isEntrySelected(entryId)} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:type-dna={sequence.kind === 'DNA'} class:type-protein={sequence.kind === 'PROTEIN'} class:type-other={sequence.kind !== 'DNA' && sequence.kind !== 'PROTEIN'} class="entry-card">
-          <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => toggleEntry(entryId)} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (event.preventDefault(), toggleEntry(entryId))}>
+        {@const collapsed = collapsedEntryIds.includes(entryId)}
+        <div id={`entry-${entryId}`} class:selected={isEntrySelected(entryId)} class:collapsed={collapsed} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:type-dna={sequence.kind === 'DNA'} class:type-protein={sequence.kind === 'PROTEIN'} class:type-other={sequence.kind !== 'DNA' && sequence.kind !== 'PROTEIN'} class="entry-card">
+          <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => activateEntryHeader(entryId)} on:keydown={(event) => handleEntryHeaderKeydown(entryId, event)}>
             <div>
               <div class="entry-heading">
                 <span class:protein={sequence.kind === 'PROTEIN'} class="entry-icon">{sequence.kind === 'DNA' ? 'D' : 'P'}</span>
@@ -804,9 +920,9 @@
                 <p class:visible={summary} class="selection-readout">{summary || 'Position'}</p>
               </div>
             </div>
-            <span class="entry-menu" aria-hidden="true">...</span>
+            <button class="entry-toggle" type="button" aria-label={collapsed ? 'Maximize card' : 'Minimize card'} title={collapsed ? 'Maximize card' : 'Minimize card'} on:click|stopPropagation={() => toggleEntryCollapsed(entryId)}>{collapsed ? '+' : '-'}</button>
           </header>
-          {#if sequence.marks.length}
+          {#if !collapsed && sequence.marks.length}
             <div class="annotation-list">
               {#each sequence.marks as mark}
                 <button class:annotation-chip={mark.type === 'ANNOTATION'} class:highlight-chip={mark.type !== 'ANNOTATION'} class:reverse={mark.direction === 'REVERSE'} style={mark.type === 'ANNOTATION' ? `--annotation-color: ${safeColor(mark.color)}` : ''} title={mark.type === 'ANNOTATION' ? `${mark.annotation} (${mark.start + 1}-${mark.end})` : `Colored region ${mark.start + 1}-${mark.end}`} on:click|stopPropagation={() => selectMark(sequence.id ?? '', mark.start, mark.end)}>
@@ -816,30 +932,45 @@
               {/each}
             </div>
           {/if}
-          <div class="sequence-view" aria-label={`${sequence.name} sequence`}>
-            {#key markRevision(renderedSequence)}
-              <SequenceViewer sequence={renderedSequence} onselect={() => (openTool = 'mark')} />
-            {/key}
-          </div>
+          {#if !collapsed}
+            <div class="sequence-view" aria-label={`${sequence.name} sequence`}>
+              {#key markRevision(renderedSequence)}
+                <SequenceViewer sequence={renderedSequence} onselect={() => (openTool = 'mark')} />
+              {/key}
+            </div>
+          {/if}
         </div>
-        {:else if entryId === alignment.id}
-      <div id={`entry-${alignment.id}`} class:selected={isEntrySelected(alignment.id)} class:removing={removingIds.includes(alignment.id)} class:entering={enteringIds.includes(alignment.id)} class="entry-card alignment-card type-alignment">
-        <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(alignment.id)} on:click={() => toggleEntry(alignment.id)} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (event.preventDefault(), toggleEntry(alignment.id))}>
+        {:else if alignment}
+        {@const alignmentCollapsed = collapsedEntryIds.includes(entryId)}
+      <div id={`entry-${entryId}`} class:selected={isEntrySelected(entryId)} class:collapsed={alignmentCollapsed} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class="entry-card alignment-card type-alignment">
+        <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => activateEntryHeader(entryId)} on:keydown={(event) => handleEntryHeaderKeydown(entryId, event)}>
           <div>
             <div class="entry-heading">
               <span class="entry-icon alignment-icon">A</span>
               <h2>{alignment.name}</h2>
             </div>
             <div class="entry-meta">
-              <p>Protein alignment · {alignment.sequences.length} sequences · {alignment.sequences[0].value.length} columns</p>
-              <p class:visible={rangeSummary(alignment.id, 'columns', undefined, $selectionStore)} class="selection-readout">{rangeSummary(alignment.id, 'columns', undefined, $selectionStore) || 'Position'}</p>
+              <p>{alignment.kind === 'DNA' ? 'DNA' : 'Protein'} alignment · {alignment.sequences.length} sequences · {alignment.sequences[0].value.length} columns</p>
+              <p class:visible={rangeSummary(entryId, 'columns', undefined, $selectionStore)} class="selection-readout">{rangeSummary(entryId, 'columns', undefined, $selectionStore) || 'Position'}</p>
             </div>
           </div>
-          <span class="entry-menu" aria-hidden="true">...</span>
+          <button class="entry-toggle" type="button" aria-label={alignmentCollapsed ? 'Maximize card' : 'Minimize card'} title={alignmentCollapsed ? 'Maximize card' : 'Minimize card'} on:click|stopPropagation={() => toggleEntryCollapsed(entryId)}>{alignmentCollapsed ? '+' : '-'}</button>
         </header>
-        <div class="alignment-view">
-          <AlignmentViewer entryId={alignment.id} sequences={alignment.sequences} consensus={alignment.consensus} />
-        </div>
+        {#if !alignmentCollapsed && alignment.marks.length}
+          <div class="annotation-list">
+            {#each alignment.marks as mark}
+              <button class:annotation-chip={mark.type === 'ANNOTATION'} class:highlight-chip={mark.type !== 'ANNOTATION'} class:reverse={mark.direction === 'REVERSE'} style={mark.type === 'ANNOTATION' ? `--annotation-color: ${safeColor(mark.color)}` : ''} title={`${mark.annotation} (${mark.start + 1}-${mark.end})`} on:click|stopPropagation={() => selectMark(entryId, mark.start, mark.end)}>
+                <i style={`background-color: ${safeColor(mark.color)}`}></i>
+                {mark.annotation}<small>{mark.start + 1}-{mark.end}</small>
+              </button>
+            {/each}
+          </div>
+        {/if}
+        {#if !alignmentCollapsed}
+          <div class="alignment-view">
+            <AlignmentViewer entryId={entryId} sequences={alignment.sequences} consensus={alignment.consensus} marks={alignment.marks} findHits={findHits.filter((hit) => hit.entryId === entryId)} onselect={() => (openTool = 'mark')} />
+          </div>
+        {/if}
       </div>
         {/if}
       {/each}
@@ -921,16 +1052,16 @@
               <div class="tool-subsection-header">Annotation arrow</div>
               <div class="swatches">
                 {#each ['#4e9d86', '#5a88b2', '#ba755f', '#8b70aa', '#c59635'] as color}
-                  <button class:chosen={annotationColor === color} title="Annotation color" style={`background:${color}`} on:click={() => (annotationColor = color)} disabled={!markTarget}></button>
+                  <button class:chosen={annotationColor === color} title="Annotation color" style={`background:${color}`} on:click={() => (annotationColor = color)} disabled={!canAnnotateRange}></button>
                 {/each}
               </div>
-              <input bind:value={annotationLabel} maxlength="100" placeholder="Annotation label" disabled={!markTarget} />
-              <button on:click={() => addMark('ANNOTATION')} disabled={!markTarget || !annotationLabel.trim()}>Add annotation</button>
+              <input bind:value={annotationLabel} maxlength="100" placeholder="Annotation label" disabled={!canAnnotateRange} />
+              <button on:click={addAnnotation} disabled={!canAnnotateRange || !annotationLabel.trim()}>Add annotation</button>
             </div>
 
             <div class="tool-subsection">
               <div class="tool-subsection-header">Selected range</div>
-              <button on:click={removeFormatting} disabled={!markTarget}>Remove formatting</button>
+              <button on:click={removeFormatting} disabled={!canAnnotateRange}>Remove formatting</button>
               <button on:click={extractSelectedSequence} disabled={!markTarget}>Extract sequence</button>
             </div>
           </div>
@@ -975,10 +1106,10 @@
         {#if openTool === 'create-alignment'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
             <div class="tool-label">Pairwise</div>
-            <button>Full sequence</button>
-            <button>Highest similarity region</button>
+            <button on:click={() => createPairwiseAlignment('CFE')} disabled={!canCreatePairwiseAlignment || $uiStore.busy}>Full sequence</button>
+            <button on:click={() => createPairwiseAlignment('LOCAL')} disabled={!canCreatePairwiseAlignment || $uiStore.busy}>Highest similarity region</button>
             <div class="tool-label spaced">Multiple sequence alignment</div>
-            <button>MUSCLE</button>
+            <button disabled>MUSCLE</button>
           </div>
         {/if}
       </section>
@@ -987,9 +1118,9 @@
         <button class="tool-heading" on:click={() => (openTool = openTool === 'analyze-alignment' ? '' : 'analyze-alignment')}>Analyze Alignment <span>+</span></button>
         {#if openTool === 'analyze-alignment'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
-            <button disabled={activeEntryId !== alignment.id}>Consensus sequence</button>
-            <button disabled={activeEntryId !== alignment.id}>Phylogenetic tree</button>
-            <button disabled={activeEntryId !== alignment.id}>Sequence logo</button>
+            <button disabled={!selectedAlignment}>Consensus sequence</button>
+            <button disabled={!selectedAlignment}>Phylogenetic tree</button>
+            <button disabled={!selectedAlignment}>Sequence logo</button>
           </div>
         {/if}
       </section>

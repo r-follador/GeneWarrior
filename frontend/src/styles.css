@@ -142,6 +142,9 @@ main {
 
 .navigator-panel,
 .tools-panel {
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 68px);
     background: #fbfcfc;
 }
 
@@ -152,7 +155,10 @@ main {
 }
 
 .tools-panel {
+    display: flex;
+    flex-direction: column;
     border-left: 1px solid #d3dddd;
+    overflow: hidden;
 }
 
 .panel-title {
@@ -493,13 +499,27 @@ nav button.entering {
     background: color-mix(in srgb, var(--entry-accent) 14%, var(--entry-tint));
 }
 
-.entry-menu {
+.entry-toggle {
     display: grid;
     place-items: center;
     width: 30px;
     height: 28px;
+    border: 1px solid color-mix(in srgb, var(--entry-accent) 35%, #cfdada);
+    border-radius: 4px;
     color: #6c7b7e;
+    background: #ffffff;
+    font-size: 17px;
     font-weight: 800;
+    line-height: 1;
+}
+
+.entry-toggle:hover {
+    border-color: var(--entry-accent);
+    color: var(--entry-accent);
+}
+
+.entry-card.collapsed > header {
+    border-bottom: 0;
 }
 
 .annotation-list {
@@ -571,7 +591,6 @@ nav button.entering {
 }
 
 .sequence-view {
-    max-height: 154px;
     overflow-wrap: anywhere;
 }
 
@@ -623,11 +642,34 @@ nav button.entering {
     background: var(--mark-color);
 }
 
-.character-sequence .find-hit {
-    border: 1px solid #2f7074;
-    color: #173d40;
-    background: color-mix(in srgb, var(--mark-color) 58%, #ffffff);
-    box-shadow: inset 0 -2px #2f7074;
+.character-sequence .find-hit,
+.alignment-row code .find-hit {
+    color: #172326;
+    background-color: #b9dfff;
+    box-shadow: inset 0 1px #3f86c7, inset 0 -1px #3f86c7;
+}
+
+.alignment-row code .find-hit {
+    background-color: #b9dfff;
+}
+
+.character-sequence .find-hit-start,
+.alignment-row code .find-hit-start {
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+    box-shadow: inset 1px 0 #3f86c7, inset 0 1px #3f86c7, inset 0 -1px #3f86c7;
+}
+
+.character-sequence .find-hit-end,
+.alignment-row code .find-hit-end {
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
+    box-shadow: inset -1px 0 #3f86c7, inset 0 1px #3f86c7, inset 0 -1px #3f86c7;
+}
+
+.character-sequence .find-hit-start.find-hit-end,
+.alignment-row code .find-hit-start.find-hit-end {
+    box-shadow: inset 0 0 0 1px #3f86c7;
 }
 
 .character-sequence .range-selected,
@@ -637,6 +679,29 @@ nav button.entering {
     box-shadow: inset 0 -2px #164b50;
 }
 
+.character-sequence .find-hit.range-selected,
+.alignment-row code .find-hit.range-selected {
+    background-color: #6fb6f2;
+    background-image: none;
+    color: #071925;
+    box-shadow: inset 0 2px #155c9c, inset 0 -2px #155c9c;
+}
+
+.character-sequence .find-hit-start.range-selected,
+.alignment-row code .find-hit-start.range-selected {
+    box-shadow: inset 2px 0 #155c9c, inset 0 2px #155c9c, inset 0 -2px #155c9c;
+}
+
+.character-sequence .find-hit-end.range-selected,
+.alignment-row code .find-hit-end.range-selected {
+    box-shadow: inset -2px 0 #155c9c, inset 0 2px #155c9c, inset 0 -2px #155c9c;
+}
+
+.character-sequence .find-hit-start.find-hit-end.range-selected,
+.alignment-row code .find-hit-start.find-hit-end.range-selected {
+    box-shadow: inset 0 0 0 2px #155c9c;
+}
+
 .alignment-view {
     user-select: none;
 }
@@ -644,6 +709,35 @@ nav button.entering {
 .wrapped-alignment {
     display: grid;
     gap: 14px;
+}
+
+.alignment-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding-bottom: 2px;
+    color: #516366;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.alignment-legend span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.alignment-legend span.active {
+    color: #173d40;
+    background: #dff0ee;
+}
+
+.alignment-legend strong {
+    color: #2f7074;
+    font-weight: 800;
 }
 
 .alignment-block {
@@ -659,33 +753,14 @@ nav button.entering {
     border-bottom: 0;
 }
 
-.alignment-ruler,
 .alignment-row {
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 24px minmax(0, 1fr);
     gap: 10px;
 }
 
-.alignment-ruler {
-    color: #819092;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    font-size: 10px;
-}
-
-.alignment-ruler span:first-child {
-    grid-column: 2;
-}
-
-.alignment-ruler span:last-child {
-    grid-column: 2;
-    justify-self: end;
-}
-
-.alignment-ruler span {
-    grid-row: 1;
-}
-
 .alignment-row strong {
+    justify-self: end;
     color: #6a7c7e;
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
     font-size: 11px;
@@ -697,11 +772,45 @@ nav button.entering {
     line-height: 1.55;
 }
 
-.consensus {
-    color: #75625b;
+.wrapped-alignment {
+    position: relative;
+}
+
+.wrapped-alignment.has-annotations .alignment-block .alignment-row:first-of-type strong,
+.wrapped-alignment.has-annotations .alignment-block .alignment-row:first-of-type code span[data-position] {
+    margin-top: 17px;
+}
+
+.alignment-annotation {
+    position: absolute;
+    z-index: 2;
+    height: 15px;
+    overflow: hidden;
+    padding: 1px 10px 1px 4px;
+    color: #173638;
+    background: var(--annotation-color);
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 10px;
+    line-height: 13px;
+    pointer-events: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: translateY(-17px);
+}
+
+.alignment-annotation.reverse {
+    padding: 1px 4px 1px 10px;
+    clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
+}
+
+.alignment-row code .alignment-consensus:not(.find-hit):not(.range-selected) {
+    background-color: #fff3a0;
 }
 
 .tool-sections {
+    flex: 1;
+    min-height: 0;
     overflow: auto;
 }
 
@@ -1042,6 +1151,9 @@ nav button.entering {
     }
 
     .tools-panel {
+        position: static;
+        height: auto;
+        overflow: visible;
         grid-column: 1 / -1;
         border-top: 1px solid #d3dddd;
         border-left: 0;
@@ -1071,6 +1183,8 @@ nav button.entering {
     }
 
     .navigator-panel {
+        position: static;
+        height: auto;
         border-right: 0;
         border-bottom: 1px solid #d3dddd;
     }

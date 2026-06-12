@@ -17,6 +17,21 @@ export interface SequenceDto {
     marks: SequenceMarkDto[];
 }
 
+export interface AlignmentSequenceDto {
+    name: string;
+    value: string;
+}
+
+export interface AlignmentDto {
+    id: string;
+    name: string;
+    kind: SequenceKind;
+    sequences: AlignmentSequenceDto[];
+    consensus: string;
+    score: number;
+    marks: SequenceMarkDto[];
+}
+
 export interface ProjectDto {
     id?: string;
     name: string;

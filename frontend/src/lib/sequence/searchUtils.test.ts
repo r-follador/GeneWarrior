@@ -34,4 +34,10 @@ describe('searchUtils', () => {
             {entryId: 'p1', start: 2, end: 2}
         ]);
     });
+
+    it('allows callers to add alignment row metadata', () => {
+        expect(findProteinHits('alignment', 'GAVFHK', 'VF').map((hit) => ({...hit, row: 1}))).toEqual([
+            {entryId: 'alignment', start: 2, end: 3, row: 1}
+        ]);
+    });
 });

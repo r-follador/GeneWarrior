@@ -23,11 +23,20 @@
   }[] = [];
 
   function markAt(position: number): SequenceMarkDto | undefined {
-    return sequence.marks.find((mark) => mark.type !== 'ANNOTATION' && position >= mark.start && position < mark.end);
+    return sequence.marks.find((mark) => isFindHit(mark) && position >= mark.start && position < mark.end)
+      ?? sequence.marks.find((mark) => mark.type !== 'ANNOTATION' && position >= mark.start && position < mark.end);
   }
 
   function isFindHit(mark: SequenceMarkDto | undefined) {
     return (mark as { type?: string } | undefined)?.type === 'FIND_HIT';
+  }
+
+  function startsFindHit(position: number, mark: SequenceMarkDto | undefined) {
+    return isFindHit(mark) && mark?.start === position;
+  }
+
+  function endsFindHit(position: number, mark: SequenceMarkDto | undefined) {
+    return isFindHit(mark) && mark !== undefined && mark.end - 1 === position;
   }
 
   function safeColor(color: string) {
@@ -162,6 +171,8 @@
       data-position={position}
       class:marked={mark}
       class:find-hit={isFindHit(mark)}
+      class:find-hit-start={startsFindHit(position, mark)}
+      class:find-hit-end={endsFindHit(position, mark)}
       class:range-selected={isSelected($selectionStore, sequence.id ?? '', position)}
       style={mark ? `--mark-color: ${safeColor(mark.color)}` : ''}
       on:pointerdown={(event) => startSelection(position, event)}
