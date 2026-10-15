@@ -28,26 +28,64 @@ export interface AlignmentDto {
     kind: SequenceKind;
     sequences: AlignmentSequenceDto[];
     consensus: string;
-    score: number;
+    score: number | null;
     marks: SequenceMarkDto[];
+    provenance?: {
+        tool: string;
+        version: string;
+        method: string;
+        sources: { id?: string; name: string; sha256: string }[]
+    } | null;
 }
 
 export interface ProjectDto {
     id?: string;
     name: string;
     sequences: SequenceDto[];
+    alignments: AlignmentDto[];
+    logos?: SequenceLogoDto[];
+    entryOrder: string[];
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface SequenceLogoDto {
+    id: string;
+    name: string;
+    sourceAlignmentId: string;
+    kind: SequenceKind;
+    mode: 'FREQUENCY' | 'INFORMATION';
+    method: 'uniform-uncorrected-v1';
+    sequenceCount: number;
+    columns: {
+        position: number;
+        observations: number;
+        gaps: number;
+        ignored: number;
+        information: number;
+        symbols: { residue: string; count: number; frequency: number; bits: number }[];
+    }[];
 }
 
 export interface ToolJobDto {
     id: string;
     tool: string;
-    status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+    status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
     createdAt: string;
     finishedAt?: string;
     result?: unknown;
     error?: string;
+    errorCode?: string;
+    startedAt?: string;
+    expiresAt?: string;
+}
+
+export interface TcoffeeCapabilities {
+    available: boolean;
+    version?: string;
+    maxSequences: number;
+    maxLength: number;
+    maxResidues: number;
 }
 
 export interface TranslationFramesDto {

@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'com.google.code.gson:gson'
@@ -55,4 +55,23 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named('bootRun') {
     args '--spring.profiles.active=local'
+}
+
+// Docker supplies an independently built frontend; local Vite development is unchanged.
+if (providers.gradleProperty('frontendDist').isPresent()) {
+    tasks.named('processResources') {
+        exclude 'static/**', 'templates/**'
+        from(providers.gradleProperty('frontendDist')) {
+            into 'webapp'
+        }
+        doFirst {
+            if (!file(providers.gradleProperty('frontendDist').get() + '/index.html').isFile()) {
+                throw new GradleException('frontendDist must contain a built frontend/index.html')
+            }
+        }
+    }
+}
+
+tasks.named('bootJar') {
+    archiveFileName = 'genewarrior.jar'
 }

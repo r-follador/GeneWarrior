@@ -3,7 +3,13 @@ HELP.md
 .gradle-home/
 build/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
 frontend/node_modules/
+data/
+.env
+.secrets/
+docker/source-archives/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

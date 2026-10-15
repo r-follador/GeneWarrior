@@ -3,6 +3,7 @@ package com.genewarrior.genewarrior.api;
 import com.genewarrior.genewarrior.api.dto.ToolJobDto;
 import com.genewarrior.genewarrior.service.JobService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,5 +20,10 @@ public class JobApiController {
     @GetMapping("/{id}")
     ToolJobDto get(@PathVariable String id) {
         return jobService.get(id);
+    }
+
+    @DeleteMapping("/{id}")
+    ToolJobDto cancel(@PathVariable String id) {
+        return jobService.cancel(id);
     }
 }

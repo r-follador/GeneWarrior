@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 
@@ -29,9 +30,10 @@ public class ProjectSharingService {
     @Transactional
     public SaveProjectResponse save(ProjectDto project) {
         String payload = toJson(project);
-        if (payload.getBytes().length > MAX_PROJECT_BYTES) {
-            throw new IllegalArgumentException("Project payload exceeds 5 MB");
+        if (payload.getBytes(StandardCharsets.UTF_8).length > MAX_PROJECT_BYTES) {
+            throw new PayloadTooLargeException("Project payload exceeds 5 MB");
         }
+        ProjectValidation.validate(project);
         Instant now = Instant.now();
         SharedProjectEntity entity = new SharedProjectEntity();
         entity.setShareKey(newShareKey());
@@ -48,7 +50,10 @@ public class ProjectSharingService {
         SharedProjectEntity entity = repository.findByShareKey(shareKey)
                 .orElseThrow(() -> new ApiNotFoundException("Project not found"));
         entity.setLastAccessedAt(Instant.now());
-        return fromJson(entity.getPayload());
+        ProjectDto project = fromJson(entity.getPayload());
+        ProjectValidation.validate(project);
+        return new ProjectDto(entity.getId().toString(), project.name(), project.sequences(),
+                project.alignments(), project.logos(), project.primerDesigns(), project.entryOrder(), entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
     private String newShareKey() {

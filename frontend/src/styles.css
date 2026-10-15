@@ -12,6 +12,32 @@ body {
     margin: 0;
 }
 
+.entry-icon.logo-icon {
+    background: #dce6ce;
+    color: #4e672c;
+}
+
+.export-scope {
+    display: grid;
+    gap: 5px;
+    margin: 8px 0;
+    font-size: 12px;
+}
+
+@page {
+    margin: 15mm;
+}
+
+@media print {
+    :root, body {
+        background: white;
+    }
+
+    #app > :not(.print-workspace) {
+        display: none !important;
+    }
+}
+
 button,
 textarea,
 select,
@@ -327,6 +353,21 @@ textarea {
     margin-bottom: 14px;
 }
 
+.share-result {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.share-result input {
+    width: 100%;
+    min-width: 0;
+}
+
+.share-copy-status {
+    min-height: 18px;
+}
+
 h1,
 h2,
 p {
@@ -451,6 +492,11 @@ p {
 .entry-card.type-other {
     --entry-accent: #718285;
     --entry-tint: #f2f5f5;
+}
+
+.entry-card.logo-card {
+    --entry-accent: #6b8645;
+    --entry-tint: #f2f6ec;
 }
 
 .entry-card.selected {
@@ -995,6 +1041,70 @@ nav button.entering {
     place-items: center;
     padding: 24px;
     background: rgb(20 34 37 / 42%);
+}
+
+.workspace-modal {
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    color: #25383b;
+    background: #ffffff;
+    border: 1px solid #c8d6d6;
+    border-radius: 7px;
+    box-shadow: 0 24px 60px rgb(22 39 43 / 30%);
+}
+
+.workspace-modal::backdrop {
+    background: rgb(20 34 37 / 42%);
+}
+
+.workspace-modal-body {
+    display: grid;
+    gap: 12px;
+    padding: 20px 16px;
+    overflow-wrap: anywhere;
+}
+
+.workspace-modal > header,
+.workspace-modal > footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    background: #f6f9f9;
+}
+
+.workspace-modal > header {
+    border-bottom: 1px solid #dfe8e8;
+}
+
+.workspace-modal > footer {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    border-top: 1px solid #dfe8e8;
+}
+
+.workspace-modal > footer button {
+    min-height: 34px;
+    padding: 6px 12px;
+    border: 1px solid #c7d3d3;
+    border-radius: 4px;
+    color: #25383b;
+    background: #ffffff;
+}
+
+.workspace-modal > footer .primary-button {
+    border-color: #1f666b;
+    color: #ffffff;
+    background: #2f7378;
+}
+
+.workspace-modal > footer .danger-button {
+    border-color: #a52b37;
+    color: #ffffff;
+    background: #b83240;
 }
 
 .translation-modal {

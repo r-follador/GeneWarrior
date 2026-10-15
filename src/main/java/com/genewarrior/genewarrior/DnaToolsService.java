@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 import org.springframework.util.MultiValueMap;
 
 import java.io.*;
@@ -20,6 +21,7 @@ import java.sql.Date;
 import java.util.*;
 
 @Service
+@Profile("legacy & !production")
 public class DnaToolsService {
     @Value("${website.address}")
     private String httpAddress;

@@ -1,4 +1,13 @@
-import type {AlignmentDto, ApiErrorDto, ProjectDto, SequenceDto, ToolJobDto, TranslationFramesDto} from './types';
+import type {
+    AlignmentDto,
+    ApiErrorDto,
+    ProjectDto,
+    SequenceDto,
+    SequenceLogoDto,
+    ToolJobDto,
+    TranslationFramesDto,
+    TcoffeeCapabilities
+} from './types';
 
 const jsonHeaders = {'Content-Type': 'application/json'};
 
@@ -9,7 +18,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(path, init);
+    const response = await fetch(path, {signal: AbortSignal.timeout(15000), ...init});
     if (!response.ok) {
         throw new ApiError((await response.json()) as ApiErrorDto);
     }
@@ -17,6 +26,34 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
+    tcoffeeCapabilities(): Promise<TcoffeeCapabilities> {
+        return request('/api/tools/tcoffee');
+    },
+    submitAlignment(requestId: string, sequences: SequenceDto[]): Promise<ToolJobDto> {
+        return request('/api/alignments', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify({requestId, sequences})
+        });
+    },
+    cancelJob(id: string): Promise<ToolJobDto> {
+        return request(`/api/jobs/${encodeURIComponent(id)}`, {method: 'DELETE'});
+    },
+    consensus(alignment: AlignmentDto): Promise<SequenceDto> {
+        return request('/api/alignments/consensus', {
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({name: alignment.name, kind: alignment.kind, sequences: alignment.sequences})
+        });
+    },
+    logo(alignment: AlignmentDto): Promise<SequenceLogoDto> {
+        return request('/api/logos', {
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({
+                sourceAlignmentId: alignment.id, name: `${alignment.name.slice(0, 240)} [Logo]`,
+                kind: alignment.kind, mode: 'FREQUENCY', sequences: alignment.sequences
+            })
+        });
+    },
     async importSequences(text: string): Promise<SequenceDto[]> {
         const body = await request<{ sequences: SequenceDto[] }>('/api/sequences/import', {
             method: 'POST',

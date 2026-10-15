@@ -6,3 +6,5 @@ export interface UiState {
 }
 
 export const uiStore = writable<UiState>({busy: false});
+
+export const persistenceError = writable<string | undefined>();

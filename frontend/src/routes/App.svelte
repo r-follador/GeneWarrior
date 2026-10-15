@@ -1,28 +1,22 @@
 <script lang="ts">
+  import { flushSync } from 'svelte';
   import { slide } from 'svelte/transition';
   import { apiClient, ApiError } from '../lib/api/client';
-  import type { AlignmentDto, SequenceDto, SequenceMarkDto, TranslationFramesDto } from '../lib/api/types';
+  import type { SequenceDto, SequenceMarkDto, TranslationFramesDto } from '../lib/api/types';
   import AlignmentViewer from '../lib/components/AlignmentViewer.svelte';
   import SequenceViewer from '../lib/components/SequenceViewer.svelte';
   import { normalizedRange } from '../lib/selection/selection';
   import { findDnaHits, findProteinHits, sanitizeDnaQuery, sanitizeProteinQuery, type SearchHit } from '../lib/sequence/searchUtils';
   import { projectStore } from '../lib/stores/projectStore';
   import { selectionStore } from '../lib/stores/selectionStore';
-  import { uiStore } from '../lib/stores/uiStore';
-
-  const exampleAlignment: AlignmentDto = {
-    id: 'example-alignment',
-    name: 'LacZ protein alignment',
-    kind: 'PROTEIN',
-    sequences: [
-      { name: 'L. delbrueckii', value: 'GSLLEVSRQEVGFRNFELKDGIMYLNGQRIVFKGANRHEFDSKLGRAITEEDMIWDIKTMKRSNINAVRCSHYPNQSLFYRLCDKYGLYVIDEANLESHGTWEKVGGHEDP' },
-      { name: 'L. lactis', value: 'GAVFHKETKKIGIRKIAIEKGQLKINGKALLVRGVNKHEFTPEHGYVVSEEVMIKDIKLMKEHNFNAVRCSHYPNDSRWYELCDEYGLYVMDEANIETHGM---------T' },
-      { name: 'E. coli', value: 'GTLIEAEACDVGFREVRIENGLLLLNGKPLLIRGVNRHEHHPLHGQVMDEQTMVQDILLMKQNNFNAVRCSHYPNHPLWYTLCDRYGLYVVDEANIETHGM---------V' }
-    ],
-    consensus: '* :  .  .:*:*:. ::.* : :**: ::..*.*.**. .  * .: *: *:.**  **  *:********** . :* *** *****:****:*:**           ',
-    score: 0,
-    marks: []
-  };
+  import { uiStore, persistenceError } from '../lib/stores/uiStore';
+  import { shareUrl } from '../lib/project/workspacePersistence';
+  import { exportEntries, type ExportEntry, type ExportScope } from '../lib/export/formats';
+  import { downloadClustal, downloadFasta } from '../lib/export/download';
+  import PrintWorkspace from '../lib/export/PrintWorkspace.svelte';
+  import LogoContent from '../lib/logo/LogoContent.svelte';
+  import Modal from '../lib/components/Modal.svelte';
+  import TcoffeeTool from '../lib/components/TcoffeeTool.svelte';
 
   const translationTables = [
     { id: 1, label: 'Standard Code' },
@@ -46,10 +40,17 @@
   ];
 
   let importText = '';
-  let selectedIds = ['example-lactis'];
-  let activeEntryId = 'example-lactis';
-  let alignments: AlignmentDto[] = [exampleAlignment];
-  let entryOrder = ['example-ecoli', 'example-lactis', 'example-protein', exampleAlignment.id];
+  let sharedUrl = '';
+  let shareCopied = false;
+  let shareModalOpen = false;
+  let shareCopyError = '';
+  let shareCopying = false;
+  let shareTrigger: HTMLElement | null = null;
+  let pendingDeleteIds: string[] = [];
+  let selectedIds: string[] = [];
+  let exportScope: ExportScope = 'auto';
+  let printEntries: ExportEntry[] = [];
+  let activeEntryId = '';
   let draggedEntryId = '';
   let dropIndicator: { entryId: string; position: 'before' | 'after' } | undefined;
   let removingIds: string[] = [];
@@ -79,24 +80,24 @@
   let findInput: HTMLInputElement;
 
   $: project = $projectStore;
-  $: syncEntryOrder(project.sequences.map((sequence) => sequence.id ?? ''), alignments.map((entry) => entry.id));
+  $: alignments = project.alignments;
+  $: logos = project.logos ?? [];
+  $: selectedAlignments = project.entryOrder.flatMap(id => selectedIds.includes(id) ? project.alignments.filter(alignment => alignment.id === id) : []);
+  $: entryOrder = project.entryOrder;
+  $: entriesToExport = exportEntries(project, selectedIds, exportScope);
+  $: sequencesToExport = entriesToExport.flatMap(entry => entry.type === 'sequence' ? [entry.value] : []);
+  $: alignmentsToExport = entriesToExport.flatMap(entry => entry.type === 'alignment' ? [entry.value] : []);
   $: selected = project.sequences.find((sequence) => sequence.id === activeEntryId);
   $: selectedDnaSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence?.kind === 'DNA');
   $: selectedProteinSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence?.kind === 'PROTEIN');
   $: selectedPairwiseSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence !== undefined);
   $: canCreatePairwiseAlignment = selectedPairwiseSequences.length === 2 && selectedPairwiseSequences[0].kind === selectedPairwiseSequences[1].kind;
-  $: selectedAlignment = entryAlignment(activeEntryId);
+  $: selectedAlignment = entryAlignment(activeEntryId, alignments);
   $: selectionLabel = selectedIds.length === 0 ? 'No entries selected' : `${selectedIds.length} ${selectedIds.length === 1 ? 'entry' : 'entries'} selected`;
-  $: markTarget = activeSequenceRange($selectionStore);
-  $: alignmentMarkTarget = activeAlignmentRange($selectionStore);
+  $: markTarget = activeSequenceRange($selectionStore, project.sequences);
+  $: alignmentMarkTarget = activeAlignmentRange($selectionStore, alignments);
   $: canAnnotateRange = Boolean(markTarget || alignmentMarkTarget);
   $: visibleTranslationRange = translationRange ?? translationHoverRange;
-
-  function syncEntryOrder(sequenceIds: string[], alignmentIds: string[]) {
-    const availableIds = [...sequenceIds.filter(Boolean), ...alignmentIds];
-    const nextOrder = [...entryOrder.filter((id) => availableIds.includes(id)), ...availableIds.filter((id) => !entryOrder.includes(id))];
-    if (nextOrder.join('|') !== entryOrder.join('|')) entryOrder = nextOrder;
-  }
 
   function isEntrySelected(id: string) {
     return selectedIds.includes(id);
@@ -220,14 +221,18 @@
     dropIndicator = undefined;
   }
 
+  function confirmDeleteSelectedEntries() {
+    if (removingIds.length || $uiStore.busy) return;
+    pendingDeleteIds = [...selectedIds];
+  }
+
   async function deleteSelectedEntries() {
-    if (selectedIds.length === 0) return;
-    const idsToDelete = [...selectedIds];
+    if (!pendingDeleteIds.length || removingIds.length) return;
+    const idsToDelete = pendingDeleteIds;
+    pendingDeleteIds = [];
     removingIds = idsToDelete;
     await new Promise((resolve) => setTimeout(resolve, 220));
-    projectStore.removeSequences(idsToDelete);
-    alignments = alignments.filter((entry) => !idsToDelete.includes(entry.id));
-    entryOrder = entryOrder.filter((id) => !idsToDelete.includes(id));
+    projectStore.removeEntries(idsToDelete);
     removingIds = [];
     selectedIds = [];
     collapsedEntryIds = collapsedEntryIds.filter((id) => !idsToDelete.includes(id));
@@ -244,24 +249,17 @@
   }
 
   function insertEntryIdsAfter(sourceId: string, ids: string[]) {
-    const newIds = ids.filter(Boolean);
-    if (newIds.length === 0) return;
-    const withoutNewIds = entryOrder.filter((id) => !newIds.includes(id));
-    const sourceIndex = withoutNewIds.indexOf(sourceId);
-    const insertIndex = sourceIndex === -1 ? withoutNewIds.length : sourceIndex + 1;
-    entryOrder = [...withoutNewIds.slice(0, insertIndex), ...newIds, ...withoutNewIds.slice(insertIndex)];
+    projectStore.insertEntriesAfter(sourceId, ids.filter(Boolean));
   }
 
   function reorderAt(targetId: string, event: DragEvent) {
     event.preventDefault();
     const sourceId = draggedEntryId || event.dataTransfer?.getData('text/plain');
     if (!sourceId || sourceId === targetId) return;
-    const withoutSource = entryOrder.filter((id) => id !== sourceId);
     const insertAfter = dropIndicator?.entryId === targetId
       ? dropIndicator.position === 'after'
       : event.clientY > (event.currentTarget as HTMLElement).getBoundingClientRect().top + (event.currentTarget as HTMLElement).offsetHeight / 2;
-    const targetIndex = withoutSource.indexOf(targetId) + (insertAfter ? 1 : 0);
-    entryOrder = [...withoutSource.slice(0, targetIndex), sourceId, ...withoutSource.slice(targetIndex)];
+    projectStore.moveEntry(sourceId, targetId, insertAfter);
     clearDragState();
   }
 
@@ -282,15 +280,15 @@
     return selectedRange || hover;
   }
 
-  function activeSequenceRange(selection = $selectionStore) {
+  function activeSequenceRange(selection = $selectionStore, sequences = project.sequences) {
     const range = normalizedRange(selection);
-    const sequence = project.sequences.find((entry) => entry.id === selection.entryId);
+    const sequence = sequences.find((entry) => entry.id === selection.entryId);
     return sequence && sequence.id === selection.entryId && range ? { sequence, range, direction: selectionDirection(selection) } : undefined;
   }
 
-  function activeAlignmentRange(selection = $selectionStore) {
+  function activeAlignmentRange(selection = $selectionStore, entries = alignments) {
     const range = normalizedRange(selection);
-    const alignment = entryAlignment(selection.entryId ?? '');
+    const alignment = entryAlignment(selection.entryId ?? '', entries);
     return alignment && range ? { alignment, range, direction: selectionDirection(selection) } : undefined;
   }
 
@@ -382,15 +380,13 @@
       type: 'ANNOTATION',
       direction: alignmentTarget.direction
     };
-    alignments = alignments.map((entry) => entry.id === alignmentTarget.alignment.id
-      ? {
-          ...entry,
-          marks: [
-            ...(entry.marks ?? []).flatMap((mark) => mark.type === 'ANNOTATION' ? subtractRange(mark, start, end) : [mark]),
-            newMark
-          ]
-        }
-      : entry);
+    projectStore.replaceAlignment({
+      ...alignmentTarget.alignment,
+      marks: [
+        ...alignmentTarget.alignment.marks.flatMap((mark) => subtractRange(mark, start, end)),
+        newMark
+      ]
+    });
     annotationLabel = '';
   }
 
@@ -408,12 +404,10 @@
     const alignmentTarget = alignmentMarkTarget;
     if (!target && !alignmentTarget) return;
     if (alignmentTarget && !target) {
-      alignments = alignments.map((entry) => entry.id === alignmentTarget.alignment.id
-        ? {
-            ...entry,
-            marks: (entry.marks ?? []).flatMap((mark) => subtractRange(mark, alignmentTarget.range.start, alignmentTarget.range.end + 1))
-          }
-        : entry);
+      projectStore.replaceAlignment({
+        ...alignmentTarget.alignment,
+        marks: alignmentTarget.alignment.marks.flatMap((mark) => subtractRange(mark, alignmentTarget.range.start, alignmentTarget.range.end + 1))
+      });
       return;
     }
     if (!target) return;
@@ -596,15 +590,38 @@
     const sources = selectedPairwiseSequences;
     await withBusy(async () => {
       const alignment = await apiClient.pairwiseAlignment(sources, mode);
-      alignments = [...alignments, alignment];
       const sourceIds = sources.flatMap((source) => source.id ? [source.id] : []);
       const sourceId = sourceIds
         .slice()
         .sort((a, b) => entryOrder.indexOf(a) - entryOrder.indexOf(b))
         .at(-1) ?? '';
-      insertEntryIdsAfter(sourceId, [alignment.id]);
+      projectStore.addAlignmentAfter(sourceId, alignment);
       animateEntriesIn([alignment.id]);
       ensureEntrySelected(alignment.id);
+    });
+  }
+
+  async function createConsensus() {
+    if ($uiStore.busy || !selectedAlignments.length) return;
+    const sources = selectedAlignments;
+    await withBusy(async () => {
+      for (const source of sources) {
+        const sequence = await apiClient.consensus(source);
+        projectStore.addSequencesAfter(source.id, [sequence]);
+        if (sequence.id) animateEntriesIn([sequence.id]);
+      }
+    });
+  }
+
+  async function createLogos() {
+    if ($uiStore.busy || !selectedAlignments.length) return;
+    const sources = selectedAlignments;
+    await withBusy(async () => {
+      for (const source of sources) {
+        const logo = await apiClient.logo(source);
+        projectStore.addLogoAfter(source.id, logo);
+        animateEntriesIn([logo.id]);
+      }
     });
   }
 
@@ -784,11 +801,42 @@
     form.remove();
   }
 
-  async function share() {
+  async function share(event: MouseEvent) {
+    if ($uiStore.busy) return;
+    shareTrigger = event.currentTarget as HTMLElement;
     await withBusy(async () => {
       const result = await apiClient.saveProject(project);
-      await navigator.clipboard?.writeText(`${location.origin}/share=${result.shareKey}`);
+      sharedUrl = shareUrl(location.href, result.shareKey);
+      shareCopied = false;
+      shareCopyError = '';
+      shareModalOpen = true;
     });
+  }
+
+  async function copyShareLink() {
+    if (shareCopying) return;
+    shareCopying = true;
+    shareCopied = false;
+    shareCopyError = '';
+    try {
+      await navigator.clipboard.writeText(sharedUrl);
+      shareCopied = true;
+    } catch {
+      shareCopyError = 'Clipboard unavailable.';
+    } finally {
+      shareCopying = false;
+    }
+  }
+
+  function preparePrint() {
+    // Native browser printing fires beforeprint synchronously; render before pagination.
+    flushSync(() => { printEntries = exportEntries(project, selectedIds, exportScope); });
+  }
+
+  function printWorkspace() {
+    preparePrint();
+    try { window.print(); }
+    finally { printEntries = []; }
   }
 
   async function withBusy(work: () => Promise<void>) {
@@ -802,7 +850,10 @@
   }
 </script>
 
-<svelte:window on:copy={copySelection} on:keydown={handleGlobalKeydown} />
+<svelte:window on:copy={copySelection} on:keydown={handleGlobalKeydown}
+  on:beforeprint={preparePrint} on:afterprint={() => { printEntries = []; }} />
+
+<PrintWorkspace name={project.name} entries={printEntries} />
 
 <header class="app-header">
   <div class="brand-lockup">
@@ -838,12 +889,13 @@
   <aside class="navigator-panel">
     <div class="panel-title">
       <span>Project Navigator</span>
-      <small>{project.sequences.length + alignments.length} entries</small>
+      <small>{entryOrder.length} entries</small>
     </div>
     <nav>
       {#each entryOrder as entryId}
         {@const sequence = entrySequence(entryId, project.sequences)}
         {@const alignment = alignments.find((entry) => entry.id === entryId)}
+        {@const logo = logos.find((entry) => entry.id === entryId)}
         {#if sequence}
           <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
             <span class:protein={sequence.kind === 'PROTEIN'} class="entry-icon">{sequence.kind === 'DNA' ? 'D' : 'P'}</span>
@@ -859,6 +911,11 @@
               <strong>{alignment.name}</strong>
               <small>{alignment.sequences.length} sequences</small>
             </span>
+          </button>
+        {:else if logo}
+          <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
+            <span class="entry-icon logo-icon">L</span>
+            <span><strong>{logo.name}</strong><small>{logo.columns.length} positions</small></span>
           </button>
         {/if}
       {/each}
@@ -882,11 +939,15 @@
     {#if $uiStore.error}
       <div class="error">{$uiStore.error}</div>
     {/if}
+    {#if $persistenceError}
+      <div class="error" role="alert">{$persistenceError}</div>
+    {/if}
 
     <div class="entry-stack">
       {#each entryOrder as entryId}
         {@const sequence = entrySequence(entryId, project.sequences)}
         {@const alignment = alignments.find((entry) => entry.id === entryId)}
+        {@const logo = logos.find((entry) => entry.id === entryId)}
         {#if sequence}
         {@const renderedSequence = sequenceWithFindMarks(sequence, findHits)}
         {@const summary = rangeSummary(entryId, sequence.kind === 'DNA' ? 'bp' : 'aa', sequence.kind, $selectionStore)}
@@ -972,6 +1033,18 @@
           </div>
         {/if}
       </div>
+        {:else if logo}
+          {@const logoCollapsed = collapsedEntryIds.includes(entryId)}
+          <div id={`entry-${entryId}`} class:selected={isEntrySelected(entryId)} class:collapsed={logoCollapsed} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class="entry-card logo-card type-other">
+            <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => activateEntryHeader(entryId)} on:keydown={(event) => handleEntryHeaderKeydown(entryId, event)}>
+              <div>
+                <div class="entry-heading"><span class="entry-icon logo-icon">L</span><h2>{logo.name}</h2></div>
+                <div class="entry-meta"><p>{logo.kind === 'DNA' ? 'DNA' : 'Protein'} logo &middot; {logo.sequenceCount} sequences &middot; {logo.columns.length} positions</p></div>
+              </div>
+              <button class="entry-toggle" type="button" aria-label={logoCollapsed ? 'Maximize card' : 'Minimize card'} title={logoCollapsed ? 'Maximize card' : 'Minimize card'} on:click|stopPropagation={() => toggleEntryCollapsed(entryId)}>{logoCollapsed ? '+' : '-'}</button>
+            </header>
+            {#if !logoCollapsed}<LogoContent {logo} />{/if}
+          </div>
         {/if}
       {/each}
     </div>
@@ -985,7 +1058,7 @@
 
     {#if selectedIds.length > 0}
       <div class="tool-actions">
-        <button on:click={deleteSelectedEntries}>Delete selected entries</button>
+        <button on:click={confirmDeleteSelectedEntries} disabled={$uiStore.busy || removingIds.length > 0}>Delete selected entries</button>
       </div>
     {/if}
 
@@ -1109,7 +1182,7 @@
             <button on:click={() => createPairwiseAlignment('CFE')} disabled={!canCreatePairwiseAlignment || $uiStore.busy}>Full sequence</button>
             <button on:click={() => createPairwiseAlignment('LOCAL')} disabled={!canCreatePairwiseAlignment || $uiStore.busy}>Highest similarity region</button>
             <div class="tool-label spaced">Multiple sequence alignment</div>
-            <button disabled>MUSCLE</button>
+            <TcoffeeTool sequences={project.entryOrder.flatMap(id => selectedPairwiseSequences.filter(sequence => sequence.id === id))} />
           </div>
         {/if}
       </section>
@@ -1118,9 +1191,9 @@
         <button class="tool-heading" on:click={() => (openTool = openTool === 'analyze-alignment' ? '' : 'analyze-alignment')}>Analyze Alignment <span>+</span></button>
         {#if openTool === 'analyze-alignment'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
-            <button disabled={!selectedAlignment}>Consensus sequence</button>
+            <button on:click={createConsensus} disabled={$uiStore.busy || !selectedAlignments.length}>Consensus sequence</button>
             <button disabled={!selectedAlignment}>Phylogenetic tree</button>
-            <button disabled={!selectedAlignment}>Sequence logo</button>
+            <button on:click={createLogos} disabled={$uiStore.busy || !selectedAlignments.length}>Sequence logo</button>
           </div>
         {/if}
       </section>
@@ -1138,16 +1211,50 @@
         <button class="tool-heading" on:click={() => (openTool = openTool === 'share-export' ? '' : 'share-export')}>Share & Export <span>+</span></button>
         {#if openTool === 'share-export'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
-            <button on:click={share}>Share project</button>
-            <button>Export FASTA</button>
-            <button>Export CLUSTAL</button>
-            <button>Print</button>
+            <button on:click={share} disabled={$uiStore.busy}>Share project</button>
+            <label class="export-scope">Export scope
+              <select bind:value={exportScope}>
+                <option value="auto">{selectedIds.length ? `Selected entries (${selectedIds.length})` : 'Automatic (all entries)'}</option>
+                <option value="all">All entries</option>
+              </select>
+            </label>
+            <button disabled={!sequencesToExport.length} title="Export full DNA and protein sequences as FASTA"
+              on:click={() => downloadFasta(project.name, sequencesToExport)}>Export FASTA</button>
+            <button disabled={!alignmentsToExport.length} title="Export alignments as CLUSTAL; multiple alignments are bundled in a ZIP"
+              on:click={() => downloadClustal(project.name, alignmentsToExport)}>Export CLUSTAL</button>
+            <button disabled={!entriesToExport.length} on:click={printWorkspace}>Print</button>
           </div>
         {/if}
       </section>
     </div>
   </aside>
 </main>
+
+{#if pendingDeleteIds.length}
+  <Modal id="delete-entries" title="Delete selected entries" onClose={() => { pendingDeleteIds = []; }}>
+    <p>Delete {pendingDeleteIds.length} selected {pendingDeleteIds.length === 1 ? 'entry' : 'entries'} from &quot;{project.name}&quot;?</p>
+    <p>This cannot be undone.</p>
+    <svelte:fragment slot="footer">
+      <button data-initial-focus on:click={() => { pendingDeleteIds = []; }}>Cancel</button>
+      <button class="danger-button" on:click={deleteSelectedEntries}>Delete {pendingDeleteIds.length === 1 ? 'entry' : 'entries'}</button>
+    </svelte:fragment>
+  </Modal>
+{/if}
+
+{#if shareModalOpen}
+  <Modal id="share-project" title="Share project" returnFocus={shareTrigger} onClose={() => { shareModalOpen = false; }}>
+    <div class="share-result">
+      <label for="shared-project-link">Shared project link</label>
+      <input id="shared-project-link" data-initial-focus readonly value={sharedUrl} on:focus={(event) => event.currentTarget.select()} />
+      <a href={sharedUrl} target="_blank" rel="noopener">Open shared project</a>
+      <p class="share-copy-status" role="status">{shareCopied ? 'Link copied.' : shareCopyError}</p>
+    </div>
+    <svelte:fragment slot="footer">
+      <button on:click={copyShareLink} disabled={shareCopying}>Copy link</button>
+      <button class="primary-button" on:click={() => { shareModalOpen = false; }}>Close</button>
+    </svelte:fragment>
+  </Modal>
+{/if}
 
 {#if translationModalOpen && translationPreview}
   <div class="modal-backdrop" role="presentation" on:click={closeTranslationModal}>

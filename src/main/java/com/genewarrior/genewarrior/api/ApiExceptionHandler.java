@@ -3,6 +3,8 @@ package com.genewarrior.genewarrior.api;
 import com.genewarrior.genewarrior.api.dto.ApiErrorDto;
 import com.genewarrior.genewarrior.service.ApiNotFoundException;
 import com.genewarrior.genewarrior.service.ExternalToolUnavailableException;
+import com.genewarrior.genewarrior.service.PayloadTooLargeException;
+import com.genewarrior.genewarrior.service.JobAdmissionException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,16 @@ import java.util.Map;
 
 @RestControllerAdvice(basePackages = "com.genewarrior.genewarrior.api")
 public class ApiExceptionHandler {
+    @ExceptionHandler(JobAdmissionException.class)
+    ResponseEntity<ApiErrorDto> admission(JobAdmissionException exception) {
+        return error(HttpStatus.valueOf(exception.status()), exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(PayloadTooLargeException.class)
+    ResponseEntity<ApiErrorDto> payloadTooLarge(PayloadTooLargeException exception) {
+        return error(HttpStatus.PAYLOAD_TOO_LARGE, exception.getMessage(), Map.of());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiErrorDto> invalidBody(MethodArgumentNotValidException exception) {
         Map<String, String> fields = new LinkedHashMap<>();

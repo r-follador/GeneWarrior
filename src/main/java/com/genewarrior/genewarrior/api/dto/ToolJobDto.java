@@ -9,6 +9,9 @@ public record ToolJobDto(
         Instant createdAt,
         Instant finishedAt,
         Object result,
-        String error
+        String error,
+        String errorCode,
+        Instant startedAt,
+        Instant expiresAt
 ) {
 }
