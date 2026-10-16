@@ -97,7 +97,11 @@ docker compose up -d --build --wait
 Open http://localhost:8081. No host Java/Node/scientific tools are required.
 T-Coffee alignment jobs are enabled with durable inputs, cancellation and refresh
 recovery. Select 2-20 same-kind ungapped sequences, then **Create Alignment > T-Coffee**.
-Primer3's design workflow is the next integration step. See [Docker deployment](docker/README.md)
+Use **PCR > Primer design** for primer pairs with optional internal probes, target
+regions and length/Tm constraints. Both tools show immediate working cards and retain
+completed results for sharing/export. **Analyze Alignment > Guide tree (T-Coffee)**
+creates SVG tree cards with Newick/SVG downloads. These are alignment guide trees,
+not a separate phylogenetic inference. See [Docker deployment](docker/README.md)
 for credentials, persistence, limits, verification, source/licensing inventory and
 remaining public-release gates.
 

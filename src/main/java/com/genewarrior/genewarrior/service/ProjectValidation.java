@@ -14,7 +14,7 @@ final class ProjectValidation {
         require(project != null, "Project is required");
         name(project.name());
         require(project.sequences().size() <= 10000 && project.alignments().size() <= 10000
-                && project.logos().size() <= 10000 && project.primerDesigns().size() <= 10000 && project.entryOrder().size() <= 10000, "Too many project entries");
+                && project.logos().size() <= 10000 && project.primerDesigns().size() <= 10000 && project.trees().size() <= 10000 && project.entryOrder().size() <= 10000, "Too many project entries");
         Set<String> ids = new HashSet<>();
         for (SequenceDto sequence : project.sequences()) {
             require(sequence != null, "Sequence is required");
@@ -45,6 +45,10 @@ final class ProjectValidation {
             SequenceLogoService.validate(logo);
             entryId(logo.id(), ids);
             name(logo.name());
+        }
+        for (var tree : project.trees()) {
+            GuideTreeService.validateResult(tree);
+            entryId(tree.id(), ids);
         }
         for (PrimerDesignDto design : project.primerDesigns()) {
             PrimerDesignService.validateResult(design);

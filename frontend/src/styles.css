@@ -1060,16 +1060,25 @@ nav button.entering {
     background: rgb(20 34 37 / 42%);
 }
 
+.workspace-modal[open] {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .workspace-modal-body {
     display: grid;
     gap: 12px;
     padding: 20px 16px;
     overflow-wrap: anywhere;
+    min-height: 0;
+    overflow: auto;
 }
 
 .workspace-modal > header,
 .workspace-modal > footer {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 12px;
     padding: 13px 16px;

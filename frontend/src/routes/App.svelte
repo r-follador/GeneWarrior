@@ -17,6 +17,14 @@
   import LogoContent from '../lib/logo/LogoContent.svelte';
   import Modal from '../lib/components/Modal.svelte';
   import TcoffeeTool from '../lib/components/TcoffeeTool.svelte';
+  import PrimerTool from '../lib/primer/PrimerTool.svelte';
+  import PrimerContent from '../lib/primer/PrimerContent.svelte';
+  import JobCard from '../lib/components/JobCard.svelte';
+  import {toolJobStore} from '../lib/stores/toolJobStore';
+  import {workspaceOrder, jobEntryId, jobTitle, jobIcon} from '../lib/jobs/workspaceJobs';
+  import TreeTool from '../lib/tree/TreeTool.svelte';
+  import TreeContent from '../lib/tree/TreeContent.svelte';
+  import {allPrimerSequences} from '../lib/primer/model';
 
   const translationTables = [
     { id: 1, label: 'Standard Code' },
@@ -82,10 +90,13 @@
   $: project = $projectStore;
   $: alignments = project.alignments;
   $: logos = project.logos ?? [];
+  $: primerDesigns = project.primerDesigns ?? [];
+  $: trees = project.trees ?? [];
   $: selectedAlignments = project.entryOrder.flatMap(id => selectedIds.includes(id) ? project.alignments.filter(alignment => alignment.id === id) : []);
   $: entryOrder = project.entryOrder;
+  $: displayOrder = workspaceOrder(entryOrder, $toolJobStore);
   $: entriesToExport = exportEntries(project, selectedIds, exportScope);
-  $: sequencesToExport = entriesToExport.flatMap(entry => entry.type === 'sequence' ? [entry.value] : []);
+  $: sequencesToExport = entriesToExport.flatMap(entry => entry.type === 'sequence' ? [entry.value] : entry.type === 'primers' ? allPrimerSequences(entry.value) : []);
   $: alignmentsToExport = entriesToExport.flatMap(entry => entry.type === 'alignment' ? [entry.value] : []);
   $: selected = project.sequences.find((sequence) => sequence.id === activeEntryId);
   $: selectedDnaSequences = selectedIds.map((id) => project.sequences.find((sequence) => sequence.id === id)).filter((sequence): sequence is SequenceDto => sequence?.kind === 'DNA');
@@ -892,11 +903,27 @@
       <small>{entryOrder.length} entries</small>
     </div>
     <nav>
-      {#each entryOrder as entryId}
+      {#each displayOrder as entryId (entryId)}
         {@const sequence = entrySequence(entryId, project.sequences)}
         {@const alignment = alignments.find((entry) => entry.id === entryId)}
         {@const logo = logos.find((entry) => entry.id === entryId)}
-        {#if sequence}
+        {@const primerDesign = primerDesigns.find(entry => entry.id === entryId)}
+        {@const tree = trees.find(entry => entry.id === entryId)}
+        {@const job = $toolJobStore.find(item => jobEntryId(item) === entryId)}
+        {#if job}
+          <button on:click={() => document.getElementById(`entry-${entryId}`)?.scrollIntoView({behavior: 'smooth', block: 'nearest'})}>
+            <span class="entry-icon">{jobIcon(job)}</span>
+            <span><strong>{jobTitle(job)}</strong><small>{job.job?.status.toLowerCase() ?? 'submitting'}</small></span>
+          </button>
+        {:else if tree}
+          <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
+            <span class="entry-icon">T</span><span><strong>{tree.name}</strong><small>{tree.sources.length} leaves</small></span>
+          </button>
+        {:else if primerDesign}
+          <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
+            <span class="entry-icon">PCR</span><span><strong>{primerDesign.name}</strong><small>{primerDesign.pairs.length} primer pairs</small></span>
+          </button>
+        {:else if sequence}
           <button draggable="true" class:active={isEntrySelected(entryId)} class:dragging={draggedEntryId === entryId} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)} class:drop-before={dropIndicator?.entryId === entryId && dropIndicator.position === 'before'} class:drop-after={dropIndicator?.entryId === entryId && dropIndicator.position === 'after'} on:click={() => toggleEntry(entryId, true)} on:dragstart={(event) => startReorder(entryId, event)} on:dragend={clearDragState} on:dragover={(event) => updateDropIndicator(entryId, event)} on:drop={(event) => reorderAt(entryId, event)}>
             <span class:protein={sequence.kind === 'PROTEIN'} class="entry-icon">{sequence.kind === 'DNA' ? 'D' : 'P'}</span>
             <span>
@@ -944,11 +971,36 @@
     {/if}
 
     <div class="entry-stack">
-      {#each entryOrder as entryId}
+      {#each displayOrder as entryId (entryId)}
         {@const sequence = entrySequence(entryId, project.sequences)}
         {@const alignment = alignments.find((entry) => entry.id === entryId)}
         {@const logo = logos.find((entry) => entry.id === entryId)}
-        {#if sequence}
+        {@const primerDesign = primerDesigns.find(entry => entry.id === entryId)}
+        {@const tree = trees.find(entry => entry.id === entryId)}
+        {@const job = $toolJobStore.find(item => jobEntryId(item) === entryId)}
+        {#if job}
+          <JobCard item={job} />
+        {:else if tree}
+          {@const collapsed = collapsedEntryIds.includes(entryId)}
+          <div id={`entry-${entryId}`} class="entry-card tree-card type-other" class:selected={isEntrySelected(entryId)} class:collapsed={collapsed} class:removing={removingIds.includes(entryId)} class:entering={enteringIds.includes(entryId)}>
+            <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => activateEntryHeader(entryId)} on:keydown={(event) => handleEntryHeaderKeydown(entryId, event)}>
+              <div><div class="entry-heading"><span class="entry-icon">T</span><h2>{tree.name}</h2></div>
+                <div class="entry-meta"><p>{tree.sources.length} leaves &middot; T-Coffee {tree.version} &middot; Guide tree</p></div></div>
+              <button class="entry-toggle" type="button" aria-label={collapsed ? 'Maximize card' : 'Minimize card'} title={collapsed ? 'Maximize card' : 'Minimize card'} on:click|stopPropagation={() => toggleEntryCollapsed(entryId)}>{collapsed ? '+' : '-'}</button>
+            </header>
+            {#if !collapsed}<TreeContent {tree} />{/if}
+          </div>
+        {:else if primerDesign}
+          {@const collapsed = collapsedEntryIds.includes(entryId)}
+          <div id={`entry-${entryId}`} class="entry-card primer-card type-other" class:selected={isEntrySelected(entryId)} class:collapsed={collapsed} class:removing={removingIds.includes(entryId)}>
+            <header class="entry-card-header" role="button" tabindex="0" aria-pressed={isEntrySelected(entryId)} on:click={() => activateEntryHeader(entryId)} on:keydown={(event) => handleEntryHeaderKeydown(entryId, event)}>
+              <div><div class="entry-heading"><span class="entry-icon">PCR</span><h2>{primerDesign.name}</h2></div>
+                <div class="entry-meta"><p>{primerDesign.pairs.length} primer pairs{primerDesign.settings.includeProbe ? ' with internal probes' : ''} &middot; Primer3 {primerDesign.version}</p></div></div>
+              <button class="entry-toggle" type="button" aria-label={collapsed ? 'Maximize card' : 'Minimize card'} title={collapsed ? 'Maximize card' : 'Minimize card'} on:click|stopPropagation={() => toggleEntryCollapsed(entryId)}>{collapsed ? '+' : '-'}</button>
+            </header>
+            {#if !collapsed}<PrimerContent design={primerDesign} />{/if}
+          </div>
+        {:else if sequence}
         {@const renderedSequence = sequenceWithFindMarks(sequence, findHits)}
         {@const summary = rangeSummary(entryId, sequence.kind === 'DNA' ? 'bp' : 'aa', sequence.kind, $selectionStore)}
         {@const collapsed = collapsedEntryIds.includes(entryId)}
@@ -1192,7 +1244,7 @@
         {#if openTool === 'analyze-alignment'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
             <button on:click={createConsensus} disabled={$uiStore.busy || !selectedAlignments.length}>Consensus sequence</button>
-            <button disabled={!selectedAlignment}>Phylogenetic tree</button>
+            <TreeTool alignments={selectedAlignments} />
             <button on:click={createLogos} disabled={$uiStore.busy || !selectedAlignments.length}>Sequence logo</button>
           </div>
         {/if}
@@ -1202,7 +1254,7 @@
         <button class="tool-heading" on:click={() => (openTool = openTool === 'pcr' ? '' : 'pcr')}>PCR <span>+</span></button>
         {#if openTool === 'pcr'}
           <div class="tool-content" transition:slide={{ duration: 160 }}>
-            <button disabled={!selected || selected.kind !== 'DNA'}>Primer design</button>
+            <PrimerTool source={markTarget?.sequence.kind === 'DNA' ? markTarget.sequence : selected} />
           </div>
         {/if}
       </section>

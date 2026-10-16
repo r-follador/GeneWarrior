@@ -44,9 +44,83 @@ export interface ProjectDto {
     sequences: SequenceDto[];
     alignments: AlignmentDto[];
     logos?: SequenceLogoDto[];
+    primerDesigns?: PrimerDesignDto[];
+    trees?: GuideTreeDto[];
     entryOrder: string[];
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface OligoConstraints {
+    minSize: number;
+    optSize: number;
+    maxSize: number;
+    minTm: number;
+    optTm: number;
+    maxTm: number;
+    minGc: number;
+    maxGc: number;
+}
+
+export interface GuideTreeDto {
+    id: string;
+    name: string;
+    sourceAlignmentId: string;
+    kind: SequenceKind;
+    version: string;
+    method: 'tcoffee-nj-guide-v1';
+    nodes: { id: number; parentId: number | null; name: string; sourceIndex: number | null; length: number | null }[];
+    sources: { id?: string; name: string; sha256: string }[];
+}
+
+export interface TreeInput {
+    sourceAlignmentId: string;
+    name: string;
+    kind: SequenceKind;
+    sequences: AlignmentSequenceDto[];
+}
+
+export interface PrimerSettings {
+    productMin: number;
+    productMax: number;
+    numReturn: number;
+    primers: OligoConstraints;
+    includeProbe: boolean;
+    probe: OligoConstraints;
+    target: { start: number; end: number } | null;
+    saltMonovalent: number;
+    saltDivalent: number;
+    dntp: number;
+    dnaConcentration: number;
+}
+
+export interface PrimerOligo {
+    sequence: string;
+    start: number;
+    end: number;
+    strand: 'FORWARD' | 'REVERSE';
+    tm: number;
+    gc: number;
+    penalty: number;
+}
+
+export interface PrimerPair {
+    index: number;
+    left: PrimerOligo;
+    right: PrimerOligo;
+    probe: PrimerOligo | null;
+    productSize: number;
+    penalty: number;
+}
+
+export interface PrimerDesignDto {
+    id: string;
+    name: string;
+    version: string;
+    source: SequenceDto;
+    settings: PrimerSettings;
+    pairs: PrimerPair[];
+    explanations: string[];
 }
 
 export interface SequenceLogoDto {

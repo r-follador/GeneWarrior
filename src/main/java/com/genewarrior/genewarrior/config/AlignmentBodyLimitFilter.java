@@ -22,7 +22,7 @@ public class AlignmentBodyLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !(request.getServletPath().equals("/api/alignments") || request.getServletPath().equals("/api/primers"))
+        return !(request.getServletPath().equals("/api/alignments") || request.getServletPath().equals("/api/primers") || request.getServletPath().equals("/api/trees"))
                 || !request.getMethod().equals("POST");
     }
 

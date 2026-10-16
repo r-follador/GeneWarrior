@@ -6,7 +6,9 @@ import type {
     SequenceLogoDto,
     ToolJobDto,
     TranslationFramesDto,
-    TcoffeeCapabilities
+    TcoffeeCapabilities,
+    PrimerSettings,
+    TreeInput
 } from './types';
 
 const jsonHeaders = {'Content-Type': 'application/json'};
@@ -26,6 +28,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
+    submitTree(requestId: string, tree: TreeInput): Promise<ToolJobDto> {
+        return request('/api/trees', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify({requestId, ...tree})
+        });
+    },
+    primerCapabilities(): Promise<{ available: boolean; version?: string; maxLength: number }> {
+        return request('/api/tools/primer3');
+    },
+    submitPrimers(requestId: string, sequence: SequenceDto, settings: PrimerSettings): Promise<ToolJobDto> {
+        return request('/api/primers', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify({requestId, sequence, settings})
+        });
+    },
     tcoffeeCapabilities(): Promise<TcoffeeCapabilities> {
         return request('/api/tools/tcoffee');
     },

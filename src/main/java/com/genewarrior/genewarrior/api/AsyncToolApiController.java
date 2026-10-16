@@ -67,4 +67,10 @@ public class AsyncToolApiController {
         return primer3.capabilities();
     }
 
+    @PostMapping("/api/trees")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    ToolJobDto createTreeJob(@Valid @RequestBody com.genewarrior.genewarrior.api.dto.TreeRequest request, HttpServletRequest http) {
+        return jobs.submitTree(request, http.getRemoteAddr());
+    }
+
 }

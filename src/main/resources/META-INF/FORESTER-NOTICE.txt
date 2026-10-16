@@ -1,0 +1,14 @@
+GeneWarrior uses the unmodified Forester 1.039 library for Newick parsing.
+Maven coordinate: org.biojava.thirdparty:forester:1.039
+Project: https://github.com/cmzmasek/forester
+Published source: https://repo.maven.apache.org/maven2/org/biojava/thirdparty/forester/1.039/forester-1.039-sources.jar
+
+NHXParser and the phylogeny library:
+Copyright (C) Christian M. Zmasek and contributors.
+Licensed under GNU LGPL version 2.1 or later, without warranty.
+License: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+The Docker runtime also includes /usr/share/common-licenses/LGPL-2.1.
+
+Forester remains a separate JAR under BOOT-INF/lib in the application archive.
+Its optional chart/PDF dependencies and graphical applications are not used.
+Retain the corresponding source and license when redistributing the library.

@@ -21,17 +21,19 @@ public class JobService {
     private final ObjectMapper json;
     private final TcoffeeService tcoffee;
     private final PrimerDesignService primer3;
+    private final GuideTreeService guideTrees;
     private final JobProperties properties;
     private final Map<String, List<Instant>> submissions = new HashMap<>();
 
     public JobService(JdbcTemplate db, org.springframework.transaction.PlatformTransactionManager manager,
-                      ObjectMapper json, TcoffeeService tcoffee, PrimerDesignService primer3, JobProperties properties) {
+                      ObjectMapper json, TcoffeeService tcoffee, PrimerDesignService primer3, GuideTreeService guideTrees, JobProperties properties) {
         this.db = db;
         this.transactions = new TransactionTemplate(manager);
         this.json = json;
         this.tcoffee = tcoffee;
         this.properties = properties;
         this.primer3 = primer3;
+        this.guideTrees = guideTrees;
     }
 
     public ToolJobDto submit(MultipleAlignmentRequest request, String client) {
@@ -43,6 +45,11 @@ public class JobService {
         var source = PrimerDesignService.validate(request.sequence(), request.settings());
         var snapshot = new PrimerDesignRequest(request.requestId(), source, request.settings());
         return submit(request.requestId().toString(), "PRIMER3", encode(snapshot), client, primer3::requireAvailable);
+    }
+
+    public ToolJobDto submitTree(TreeRequest request, String client) {
+        guideTrees.validate(request);
+        return submit(request.requestId().toString(), "GUIDE_TREE", encode(request), client, tcoffee::requireAvailable);
     }
 
     private ToolJobDto submit(String id, String tool, String input, String client, Runnable requireAvailable) {
@@ -99,7 +106,7 @@ public class JobService {
             db.update("delete from tool_job where expires_at < ? and lease_until is null", now());
             if (db.queryForObject("select count(*) from tool_job where lease_until is not null", Integer.class) != 0)
                 return null;
-            List<Claim> queued = db.query("select id, tool, input from tool_job where status = 'QUEUED' and ((tool = 'TCOFFEE' and ?) or (tool = 'PRIMER3' and ?)) order by created_at, id limit 1",
+            List<Claim> queued = db.query("select id, tool, input from tool_job where status = 'QUEUED' and ((tool in ('TCOFFEE', 'GUIDE_TREE') and ?) or (tool = 'PRIMER3' and ?)) order by created_at, id limit 1",
                     (rs, row) -> decodeClaim(rs), tcoffee.capabilities().available(), primer3.capabilities().available());
             if (queued.isEmpty()) return null;
             Claim claim = queued.getFirst();
@@ -152,10 +159,12 @@ public class JobService {
     private Claim decodeClaim(ResultSet rs) throws SQLException {
         String tool = rs.getString("tool"), input = rs.getString("input");
         String id = rs.getString("id"), token = UUID.randomUUID().toString();
-        if (tool.equals("TCOFFEE")) return new Claim(id, token, decodeInput(input), null, tool);
+        if (tool.equals("TCOFFEE")) return new Claim(id, token, decodeInput(input), null, tool, null);
         try {
+            if (tool.equals("GUIDE_TREE"))
+                return new Claim(id, token, List.of(), null, tool, json.readValue(input, TreeRequest.class));
             var request = json.readValue(input, PrimerDesignRequest.class);
-            return new Claim(id, token, List.of(request.sequence()), request.settings(), tool);
+            return new Claim(id, token, List.of(request.sequence()), request.settings(), tool, null);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Invalid saved primer input", e);
         }
@@ -178,6 +187,7 @@ public class JobService {
         return value == null ? null : value.toInstant();
     }
 
-    public record Claim(String id, String token, List<SequenceDto> sequences, PrimerSettings settings, String tool) {
+    public record Claim(String id, String token, List<SequenceDto> sequences, PrimerSettings settings, String tool,
+                        TreeRequest tree) {
     }
 }

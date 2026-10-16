@@ -53,7 +53,7 @@ public class ProjectSharingService {
         ProjectDto project = fromJson(entity.getPayload());
         ProjectValidation.validate(project);
         return new ProjectDto(entity.getId().toString(), project.name(), project.sequences(),
-                project.alignments(), project.logos(), project.primerDesigns(), project.entryOrder(), entity.getCreatedAt(), entity.getUpdatedAt());
+                project.alignments(), project.logos(), project.primerDesigns(), project.trees(), project.entryOrder(), entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
     private String newShareKey() {

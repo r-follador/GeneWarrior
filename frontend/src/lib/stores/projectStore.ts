@@ -1,4 +1,5 @@
 import {writable} from 'svelte/store';
+import type {PrimerDesignDto, GuideTreeDto} from '../api/types';
 import type {AlignmentDto, ProjectDto, SequenceDto, SequenceLogoDto} from '../api/types';
 
 const exampleAlignment: AlignmentDto = {
@@ -107,6 +108,15 @@ export function createProjectStore(initial: ProjectDto = exampleProject()) {
             ...project, alignments: [...project.alignments, alignment],
             entryOrder: insertAfter(project.entryOrder, sourceId, [alignment.id])
         })),
+        addTreeAfter: (sourceId: string, tree: GuideTreeDto) => edit(project => project.entryOrder.includes(tree.id) ? project : ({
+            ...project,
+            trees: [...(project.trees ?? []), tree],
+            entryOrder: insertAfter(project.entryOrder, sourceId, [tree.id])
+        })),
+        addPrimerDesignAfter: (sourceId: string, design: PrimerDesignDto) => edit((project) => project.entryOrder.includes(design.id) ? project : ({
+            ...project, primerDesigns: [...(project.primerDesigns ?? []), design],
+            entryOrder: insertAfter(project.entryOrder, sourceId, [design.id])
+        })),
         addLogoAfter: (sourceId: string, logo: SequenceLogoDto) => edit((project) => ({
             ...project, logos: [...(project.logos ?? []), logo],
             entryOrder: insertAfter(project.entryOrder, sourceId, [logo.id])
@@ -128,6 +138,8 @@ export function createProjectStore(initial: ProjectDto = exampleProject()) {
             sequences: project.sequences.filter((sequence) => !ids.includes(sequence.id ?? '')),
             alignments: project.alignments.filter((alignment) => !ids.includes(alignment.id)),
             logos: (project.logos ?? []).filter(logo => !ids.includes(logo.id)),
+            ...(project.primerDesigns ? {primerDesigns: project.primerDesigns.filter(design => !ids.includes(design.id))} : {}),
+            ...(project.trees ? {trees: project.trees.filter(tree => !ids.includes(tree.id))} : {}),
             entryOrder: project.entryOrder.filter((id) => !ids.includes(id))
         })),
         replaceSequence: (sequence: SequenceDto) => edit((project) => ({

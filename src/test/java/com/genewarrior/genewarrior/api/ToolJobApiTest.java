@@ -30,11 +30,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class ToolJobApiTest {
     @Autowired
+    GuideTreeService guideTrees;
+    @Autowired
     MockMvc mvc;
     @Autowired
     JobService jobs;
     @Autowired
     TcoffeeService tcoffee;
+    @Autowired
+    PrimerDesignService primer3;
     @Autowired
     ObjectMapper json;
     @Autowired
@@ -66,7 +70,7 @@ class ToolJobApiTest {
         mvc.perform(post("/api/alignments").contentType("application/json").content(json.writeValueAsBytes(request)))
                 .andExpect(status().isAccepted()).andExpect(jsonPath("$.status").value("QUEUED"));
         assertNotNull(db.queryForObject("select input from tool_job where id = ?", String.class, request.requestId().toString()));
-        new ToolJobWorker(jobs, tcoffee).tick();
+        new ToolJobWorker(jobs, tcoffee, primer3, guideTrees).tick();
         mvc.perform(get("/api/jobs/" + request.requestId())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.result.sequences[0].value").value("ACGT"))
@@ -81,6 +85,43 @@ class ToolJobApiTest {
         assertEquals(1, db.queryForObject("select count(*) from tool_job", Integer.class));
         var conflict = new MultipleAlignmentRequest(request.requestId(), List.of(request.sequences().getFirst(), request.sequences().getFirst()));
         assertEquals(409, assertThrows(JobAdmissionException.class, () -> jobs.submit(conflict, client)).status());
+    }
+
+    @Test
+    void guideTreeJobsPersistSnapshotsAndShareStructuredResults() throws Exception {
+        var input = new TreeRequest(UUID.randomUUID(), "alignment", "Tree sample", SequenceKind.DNA,
+                List.of(new AlignmentSequenceDto("Duplicate", "ACGT"), new AlignmentSequenceDto("Duplicate", "AC-T"), new AlignmentSequenceDto("Third", "A-GT")));
+        when(runner.run(anyList(), anyString(), anyMap(), eq("guide.nwk"), any())).thenReturn(
+                new ExternalToolRunner.ToolRunResult(0, "", "", "(seq0001:0.1,seq0002:0.2,seq0003:0.1);"));
+        mvc.perform(post("/api/trees").contentType("application/json").content(json.writeValueAsBytes(input)))
+                .andExpect(status().isAccepted()).andExpect(jsonPath("$.tool").value("GUIDE_TREE"));
+        assertEquals(input, json.readValue(db.queryForObject("select input from tool_job where id = ?", String.class, input.requestId().toString()), TreeRequest.class));
+        new ToolJobWorker(jobs, tcoffee, primer3, guideTrees).tick();
+        var job = jobs.get(input.requestId().toString());
+        assertEquals("SUCCEEDED", job.status());
+        var tree = json.convertValue(job.result(), GuideTreeDto.class);
+        assertEquals(4, tree.nodes().size());
+        var project = new ProjectDto(null, "Tree project", List.of(), List.of(), List.of(), List.of(), List.of(tree), List.of(tree.id()), null, null);
+        var saved = mvc.perform(post("/api/projects").contentType("application/json").content(json.writeValueAsBytes(java.util.Map.of("project", project))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        mvc.perform(get("/api/projects/" + json.readTree(saved).get("shareKey").asText()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.trees[0].nodes[2].sourceIndex").value(1));
+    }
+
+    @Test
+    void treeValidationCancellationAndAvailabilityUseExistingJobContracts() throws Exception {
+        var input = new TreeRequest(UUID.randomUUID(), "alignment", "Tree", SequenceKind.DNA,
+                List.of(new AlignmentSequenceDto("One", "ACGT"), new AlignmentSequenceDto("Two", "AC-T"), new AlignmentSequenceDto("Three", "A-GT")));
+        mvc.perform(post("/api/trees").contentType("application/json").content("{}")).andExpect(status().isBadRequest());
+        var pairwise = new TreeRequest(UUID.randomUUID(), input.sourceAlignmentId(), input.name(), input.kind(), input.sequences().subList(0, 2));
+        mvc.perform(post("/api/trees").contentType("application/json").content(json.writeValueAsBytes(pairwise))).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/trees").servletPath("/api/trees").contentType("application/json").content(" ".repeat(262145))).andExpect(status().isPayloadTooLarge());
+        var job = jobs.submitTree(input, client);
+        assertEquals(job.id(), jobs.submitTree(input, client).id());
+        assertEquals("CANCELLED", jobs.cancel(job.id()).status());
+        when(runner.available(anyString())).thenReturn(false);
+        var next = new TreeRequest(UUID.randomUUID(), input.sourceAlignmentId(), input.name(), input.kind(), input.sequences());
+        mvc.perform(post("/api/trees").contentType("application/json").content(json.writeValueAsBytes(next))).andExpect(status().isServiceUnavailable());
     }
 
     @Test
@@ -125,7 +166,7 @@ class ToolJobApiTest {
         var first = jobs.submit(request(), client);
         when(runner.run(anyList(), anyString(), anyMap(), anyString(), any()))
                 .thenThrow(new ToolExecutionException("TIMEOUT", "External tool timed out"));
-        new ToolJobWorker(jobs, tcoffee).tick();
+        new ToolJobWorker(jobs, tcoffee, primer3, guideTrees).tick();
         assertEquals("FAILED", jobs.get(first.id()).status());
         assertEquals("TIMEOUT", jobs.get(first.id()).errorCode());
         db.update("update tool_job set expires_at = ?", Timestamp.from(Instant.now().minusSeconds(1)));

@@ -72,7 +72,7 @@ class ProductionProfileTest {
                         .content("{\"text\":\">DNA\\nACGT\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.sequences[0].sequence").value("ACGT"));
         long count = jobs.count();
-        for (String path : new String[]{"/api/alignments", "/api/primers"}) {
+        for (String path : new String[]{"/api/alignments"}) {
             mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content("""
                             {"requestId":"c8bc5c45-4d78-4166-b77f-9ca8438f58d0","sequences":[
                               {"name":"First","kind":"DNA","sequence":"ACGT"},
@@ -81,6 +81,9 @@ class ProductionProfileTest {
                     .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.message").exists())
                     .andExpect(content().string(not(containsString("QUEUED"))));
         }
+        mvc.perform(post("/api/primers").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/tools/primer3")).andExpect(status().isOk()).andExpect(jsonPath("$.available").value(false));
         assertEquals(count, jobs.count());
     }
 }

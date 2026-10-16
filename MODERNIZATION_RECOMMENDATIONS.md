@@ -1,7 +1,8 @@
 # GeneWarrior Modernization Recommendations
 
-Last updated: 2026-10-15, including Docker deployment and the first complete T-Coffee
-job workflow. This supersedes the original pre-rewrite assessment. Phase descriptions
+Last updated: 2026-10-16, including T-Coffee guide-tree cards and SVG/Newick export,
+alongside Docker deployment and Primer3 internal probes. This supersedes the original pre-rewrite assessment. Phase
+descriptions
 below remain the target design; implemented scope and remaining gates are identified separately.
 
 ## Executive Summary
@@ -11,12 +12,14 @@ A Svelte/TypeScript workspace and typed Spring Boot APIs now coexist in the sour
 tree with the opt-in legacy Thymeleaf/jQuery application. Core sequence workflows and pairwise alignment are
 implemented. Complete workspace persistence and FASTA/CLUSTAL/print exports are now
 implemented, as are native Java-calculated/SVG-rendered sequence logos. External-tool
-execution now supports T-Coffee through bounded, database-backed jobs. Complete legacy
+execution now supports T-Coffee and Primer3 through bounded, database-backed jobs. Complete legacy
 code retirement remains unfinished. Docker runs the modern frontend/API and PostgreSQL;
-T-Coffee and Primer3 are bundled and tested offline. Primer3's application action is
-still disabled pending its typed design workflow.
+T-Coffee and Primer3 are bundled and tested offline. Primer designs have typed settings,
+source snapshots, result cards and persistence/share/export support.
+T-Coffee guide trees now have a typed asynchronous workflow and native SVG rendering;
+they are explicitly not presented as an independent phylogenetic inference.
 
-The next priorities are Primer3 integration, the remaining advanced tools and
+The next priorities are the remaining advanced tools and
 public-release hardening, including representative tool workload benchmarks.
 Browser regression coverage and targeted interaction cleanup accompany those changes.
 
@@ -60,22 +63,23 @@ the modern API and the compiled frontend in the application image.
 
 The modern path uses Java records, Jackson, Bean Validation and focused services:
 
-| Area                          | Status                                                                                                                                 |
-|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| Sequence import               | Implemented through `POST /api/sequences/import`                                                                                       |
-| Reverse/complement transforms | Implemented through `POST /api/transforms`                                                                                             |
-| Translation                   | Implemented through `/api/translations`, including best ORF, frame preview and selected-range translation                              |
-| Pairwise alignment            | Implemented through `POST /api/alignments/pairwise`; cost-free ends and local alignment use existing algorithms                        |
-| Consensus sequence            | Implemented synchronously through `POST /api/alignments/consensus`; validated DNA/protein voting returns an ordinary sequence          |
-| Sequence logos                | Implemented synchronously through `POST /api/logos`; native counts, frequencies and uniform-background information content             |
-| Project storage               | Complete workspace snapshots saved/loaded through `/api/projects`, with structural validation and HTTP 413 size errors                 |
-| Jobs                          | Persisted input snapshots, atomic single-worker claims, leases, cancellation, expiry, idempotent submission and scoped browser polling |
-| External tools                | T-Coffee runs end to end through the bounded runner; pinned Primer3 passes offline fixtures but its application endpoint remains 503   |
-| Errors and validation         | Structured API errors and basic validation exist; limits and validation are not yet consistent                                         |
+| Area                          | Status                                                                                                                                     |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| Sequence import               | Implemented through `POST /api/sequences/import`                                                                                           |
+| Reverse/complement transforms | Implemented through `POST /api/transforms`                                                                                                 |
+| Translation                   | Implemented through `/api/translations`, including best ORF, frame preview and selected-range translation                                  |
+| Pairwise alignment            | Implemented through `POST /api/alignments/pairwise`; cost-free ends and local alignment use existing algorithms                            |
+| Consensus sequence            | Implemented synchronously through `POST /api/alignments/consensus`; validated DNA/protein voting returns an ordinary sequence              |
+| Sequence logos                | Implemented synchronously through `POST /api/logos`; native counts, frequencies and uniform-background information content                 |
+| Project storage               | Complete workspace snapshots saved/loaded through `/api/projects`, with structural validation and HTTP 413 size errors                     |
+| Jobs                          | Persisted input snapshots, atomic single-worker claims, leases, cancellation, expiry, idempotent submission and scoped browser polling     |
+| External tools                | T-Coffee and Primer3 run through the bounded runner and shared durable queue; Primer3 supports standard pairs and optional internal probes |
+| Errors and validation         | Structured API errors and basic validation exist; limits and validation are not yet consistent                                             |
 
 Focused services include `SequenceImportService`, `SequenceTransformService`,
 `TranslationService`, `AlignmentService`, `ProjectSharingService`,
-`SequenceLogoService`, `TcoffeeService`, `JobService` and `ExternalToolRunner`.
+`SequenceLogoService`, `TcoffeeService`, `PrimerDesignService`, `GuideTreeService`, `JobService` and
+`ExternalToolRunner`.
 
 The legacy source is retained for comparison, with explicit isolation:
 
@@ -121,9 +125,9 @@ Tool control status:
 |-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Multiple alignment      | T-Coffee enabled for supported same-kind inputs when its startup probe succeeds; queued/running/cancel/retry UI and refresh recovery                  |
 | Consensus sequence      | Implemented for every selected alignment; creates a standalone DNA/protein card immediately below its source, with persistence/sharing/export support |
-| Phylogenetic tree       | No action handler                                                                                                                                     |
+| Guide tree (T-Coffee)   | Implemented for selected alignments; asynchronous Newick guide-tree generation, SVG rendering, downloads and persistence                              |
 | Sequence logo           | Implemented for selected alignments, using synchronous Java calculation and native SVG rendering                                                      |
-| Primer design           | No action handler                                                                                                                                     |
+| Primer design           | PCR dialog with target/product/oligo/reaction constraints, optional internal probe, result map, oligo export and complete persistence                 |
 | Export FASTA            | Implemented: full standalone DNA/protein sequences, 70-character lines, sanitized filenames/headers                                                   |
 | Export CLUSTAL          | Implemented: full alignments, 60-column blocks, gaps/consensus, unique row identifiers; multiple alignments bundled as separate files in a ZIP        |
 | Print                   | Implemented: dedicated expanded-card layout, annotations/colors, pagination, native browser printing; transient UI state unchanged                    |
@@ -215,10 +219,11 @@ heights within 1e-12. Logomaker is not a project/runtime dependency.
 
 ### External Tool Execution
 
-The initial T-Coffee workflow is implemented (details below). Primer3 and trees still
-need dedicated request/result contracts and UI. Tool availability is exposed separately
-from application readiness through `GET /api/tools/tcoffee`; it includes an actual
-version probe through the runner, not just an executable-file check.
+Initial T-Coffee alignment/guide-tree and Primer3 workflows are implemented (details
+below). Model-based phylogenetic inference remains separate and is not packaged. Tool availability is exposed
+separately from application readiness through `GET /api/tools/tcoffee` and
+`GET /api/tools/primer3`. Primer3 startup checks exercise thermodynamic data as well
+as the version probe, not just executable-file availability.
 
 Remaining hardening includes adversarial process-tree tests (especially instant
 double-fork/detached descendants), representative maximum-size workload measurements,
@@ -268,15 +273,15 @@ Work still needed:
 
 ## Verification And Test Coverage
 
-Verified on 2026-10-15:
+Verified on 2026-10-16 (source-export and restart-recovery checks were last run on 2026-10-15):
 
 | Check                                          | Result                                                                                                                                                                   |
 |------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `GRADLE_USER_HOME=.gradle-home ./gradlew test` | Passed; 57 backend tests, including runner limits/cleanup, durable jobs, T-Coffee parsing and production isolation                                                       |
+| `GRADLE_USER_HOME=.gradle-home ./gradlew test` | Passed; 72 backend tests, including guide-tree parsing/topology/validation, Primer3, job lifecycle, persistence, runner limits and production isolation                  |
 | `npm --prefix frontend run check`              | Passed; zero errors/warnings                                                                                                                                             |
-| `npm --prefix frontend test`                   | Passed; 33 search, persistence, export, logo/layout and resumable job tests                                                                                              |
+| `npm --prefix frontend test`                   | Passed; 45 tests, including guide-tree layout/validation/Newick, search, persistence, export, logos, primers and resumable jobs                                          |
 | `npm --prefix frontend run build`              | Passed                                                                                                                                                                   |
-| `npm --prefix frontend run test:e2e`           | Passed; 16 browser workflows against the packaged Docker application/PostgreSQL on port 8081, including real T-Coffee submission/refresh/share/export and cancel/retry   |
+| `npm --prefix frontend run test:e2e`           | Passed; 21 browser workflows against Docker/PostgreSQL on port 8081, including real guide-tree SVG/Newick/share/print, mobile labels and the minimum-row constraint      |
 | `docker compose build` / `up -d --wait`        | Passed; independent multi-stage build, PostgreSQL migration/schema validation, healthy app and database                                                                  |
 | Container recreation/persistence               | Passed; the same saved project loads after both app and database containers are recreated with the existing volume                                                       |
 | PostgreSQL job recovery                        | Passed; a queued fixture persisted while the app was stopped completed after startup; an expired RUNNING lease became FAILED/INTERRUPTED, with both lease slots released |
@@ -290,6 +295,16 @@ tests. H2 context tests exercise migration boot/schema validation; the Docker sm
 test also exercises the real PostgreSQL V2 migration, atomic job claims, real DNA/protein
 alignment execution and snapshot round trip. Fake-runner tests cover queue/rate limits,
 idempotency, cancellation/completion races, lost/expired leases and result expiry.
+Primer3 tests cover typed requests, right-primer coordinates/orientation, internal
+probe placement, malformed output and no-pair results. Docker smoke checks real
+pair-only and probe designs, target flanking and PostgreSQL project round trips.
+Browser tests verify probe options, result placement, refresh, sharing, FASTA/print,
+mobile dialog controls and a placeholder visible before the submission response.
+Guide-tree tests cover multifurcations, duplicate names, signed/scientific/zero lengths,
+malformed or missing leaves, topology validation, bounded input and project round trips.
+Real Docker smoke checks DNA and protein guide trees and rejects two-row requests
+before execution. Browser checks include desktop/mobile SVG rendering, safe long
+labels, topology fallback, refresh, SVG/Newick downloads, sharing and printing.
 
 Coverage is still missing or insufficient for:
 
@@ -326,16 +341,17 @@ and do not carry workspace annotations. Static HTML export remains legacy-only.
    scope, sanitized filenames and unit/browser tests. Export logic and print layout
    live in `frontend/src/lib/export/` rather than in the workspace component.
 3. **Prove the containerized toolchain: initial baseline done.** Offline T-Coffee and
-   thermodynamic Primer3 fixtures pass. Tree engine, full reproducibility and release
+   thermodynamic Primer3 and guide-tree fixtures pass. Full reproducibility and release
    licensing/security review remain. See `docker/README.md`.
 4. **Runner/job pipeline: initial implementation done.** Persisted input, single-worker
    leases, bounded execution, cancellation, expiry and browser polling are wired and tested.
 5. **Replace MUSCLE with T-Coffee: initial workflow done.** Real DNA/protein execution,
    verified results, nullable score, provenance and share/export integration work.
    Broader alphabet support and representative capacity benchmarks remain deliberate follow-ups.
-6. **Migrate remaining tools and their persistence.** Primer3 and trees need typed
-   results, workspace rendering and save/share support. Consensus extraction and native
-   logos are complete for the initial scopes described below.
+6. **Migrate remaining tools and their persistence.** Initial Primer3 pairs/internal
+   probes, consensus extraction, native logos and T-Coffee guide trees are implemented.
+   Model-based phylogenetic inference is not included. Primer overhangs,
+   forced primers and genomic specificity checks remain outside the initial scope.
 7. **Finish the Docker release gates.** Svelte/Spring packaging, Compose/PostgreSQL,
    secrets, health and production legacy isolation are implemented. Public-service
    resource/abuse controls, dependency remediation, backups and CI still need work.
@@ -361,7 +377,7 @@ package `13.45.0.4846264+really13.41.0.28bdc39+dfsg-1` actually reports upstream
 `slow_pair,lalign_id_pair` methods pass DNA/protein residue-preservation fixtures
 without MUSCLE or networking. Tiny alignments used about 475 MiB peak RSS; one tool
 job at a time remains the intended initial policy. Thermodynamic primer design also
-passes. Tree generation is not packaged or claimed complete.
+passes. T-Coffee guide-tree generation is packaged; no separate phylogenetic engine is bundled.
 
 `tool-sources` exports matching source archives, distro patches and checksums.
 Runtime package/version inventory and package license notices are retained. Distro
@@ -404,9 +420,64 @@ No image has been published to a registry.
   The new UI lives in `TcoffeeTool.svelte`, outside the main workspace component.
 
 The later phase descriptions remain the target design, not a claim that all release
-gates are satisfied. Primer3 still returns 503. Binary output support, richer internal
+gates are satisfied. Binary output support, richer internal
 diagnostics and freezing execution options/version at admission (rather than recording
 the version actually used in the result) remain future runner/job improvements.
+
+### Implemented Primer3 Increment
+
+- `POST /api/primers` accepts a UUID, one DNA source and validated settings; it returns
+  a durable job with HTTP 202. Limits: 40-20,000 ungapped A/C/G/T/N bases, 1-10 pairs,
+  256 KiB request body. Primers/probes cannot contain ambiguous bases.
+- The PCR dialog supports an optional selected target region, product-size range,
+  primer length/Tm/GC constraints, reaction concentrations and an optional internal
+  probe with separate length/Tm/GC constraints. Probe generation is opt-in.
+- `PrimerDesignService` serializes allowlisted Boulder tags, uses the configured
+  thermodynamic directory and validates returned sequences/coordinates against the
+  source. API coordinates are zero-based half-open; UI positions are one-based.
+  Reverse primers are returned in synthesis orientation, not as the forward template
+  substring. No acceptable pairs is a successful result with diagnostic explanations.
+- Primer3 shares T-Coffee's queue, leases, cancellation, retention and rate limits.
+  Both tools create an immediate workspace placeholder before the POST response,
+  show submitting/queued/running state, and replace it with the completed result.
+  Failed/cancelled cards offer retry/dismiss; refresh preserves pending jobs.
+- The additive `primerDesigns` project collection stores source, settings, version,
+  pairs and explanations. Existing projects without this collection remain valid.
+  Designs can be saved/shared/printed even if their source card has been deleted.
+  Pair FASTA export, full-project oligo export, copying and adding oligos as ordinary
+  DNA cards use 5'-to-3' oligo sequences, including internal probes.
+- Genome-wide specificity, overhangs, forced/excluded primer regions and dye/quencher
+  modifications are not implemented. This is not full legacy PCR feature parity.
+
+### Implemented Guide-Tree Increment
+
+- Per the 2026-10-16 scope decision, use T-Coffee's alignment guide tree rather than
+  introducing FastTree. The UI action is **Analyze Alignment > Guide tree (T-Coffee)**.
+  The legacy `muscle -maketree` action and binary-only `phylTree` HTML/SVG generator
+  remain isolated; the modern workflow does not call them.
+- `POST /api/trees` accepts an alignment snapshot and UUID, then uses the existing
+  durable job queue. Inputs have 3-20 rows, at most 10,000 aligned columns, 2,000
+  ungapped residues per row and 10,000 total. The supported alphabets match MSA.
+  The pinned T-Coffee version writes no guide-tree file for a two-row alignment;
+  these requests are rejected before enqueueing instead of failing after execution.
+- `GuideTreeService` removes alignment gaps and recomputes T-Coffee's NJ guide tree
+  using the established offline pairwise methods, one core and explicit `-newtree`.
+  This is not a distance tree inferred from the current alignment columns, nor a
+  cached original MSA artifact. Source alignment content is not changed.
+- Forester 1.039 parses bounded Newick output using generated leaf IDs. Validate
+  finite branch lengths, connected topology and exact leaf membership, then restore
+  original names (including duplicates) with source indices and sequence hashes.
+  The API returns flat typed nodes, never generated HTML or raw SVG.
+- Tree cards support collapse/reorder/delete, browser recovery, sharing, print,
+  standalone SVG and quoted Newick downloads. Pure layout functions feed Svelte SVG:
+  rectangular branches, leaf markers, wrapped labels, branch-length or topology view.
+  Zero-distance trees use topology; negative lengths are drawn at zero but retained
+  numerically and in Newick. The display root has no biological meaning, and guide
+  distances are not labelled as substitutions, time or bootstrap support.
+- An additive optional `trees` project collection preserves older workspaces; no
+  SQL schema change is needed. Forester's optional chart/PDF dependencies are excluded.
+  Its LGPL-2.1-or-later notices/source must accompany redistribution; see the packaged
+  `META-INF/FORESTER-NOTICE.txt`. Public-release licensing/security gates still apply.
 
 ### Target Deployment
 
@@ -439,14 +510,14 @@ Browser -> HTTPS reverse proxy -> genewarrior:8080 -> PostgreSQL
 
 ### Tool Inventory
 
-| Feature                                                        | Proposed implementation                                        | Required runtime content                                                                             |
-|----------------------------------------------------------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Import, transforms, translation, pairwise alignment, consensus | Existing Java/TypeScript logic                                 | Java runtime; no additional scientific executable                                                    |
-| Multiple alignment                                             | T-Coffee, offline standard configuration                       | `t_coffee`, its required libraries/data and only dependencies proven necessary for the selected mode |
-| Primer design                                                  | Primer3 CLI                                                    | `primer3_core` plus matching `primer3_config` thermodynamic parameter files                          |
-| Sequence logos                                                 | Implemented: Java statistics + Svelte SVG                      | Java runtime and bundled, licensed glyph outlines; no external process                               |
-| Phylogenetic trees                                             | Recommended: FastTree, subject to fixture/semantics validation | Pinned executable and its runtime libraries                                                          |
-| NCBI BLAST                                                     | Existing browser form submission                               | No local executable or databases                                                                     |
+| Feature                                                        | Proposed implementation                   | Required runtime content                                                                             |
+|----------------------------------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Import, transforms, translation, pairwise alignment, consensus | Existing Java/TypeScript logic            | Java runtime; no additional scientific executable                                                    |
+| Multiple alignment                                             | T-Coffee, offline standard configuration  | `t_coffee`, its required libraries/data and only dependencies proven necessary for the selected mode |
+| Primer design                                                  | Primer3 CLI                               | `primer3_core` plus matching `primer3_config` thermodynamic parameter files                          |
+| Sequence logos                                                 | Implemented: Java statistics + Svelte SVG | Java runtime and bundled, licensed glyph outlines; no external process                               |
+| Alignment guide trees                                          | T-Coffee NJ guide tree (implemented)      | Existing T-Coffee binary; Forester parser and native SVG renderer                                    |
+| NCBI BLAST                                                     | Existing browser form submission          | No local executable or databases                                                                     |
 
 T-Coffee's standard and meta/template modes have different dependency requirements.
 M-Coffee can invoke MUSCLE and other aligners; template modes can contact remote
@@ -622,25 +693,23 @@ Implement one dedicated service/workflow at a time, sharing only runner/job plum
    its source, without copying alignment-coordinate annotations. Results use normal
    autosave, sharing and FASTA export. Unit/API tests cover the rules and validation;
    browser tests cover multi-selection, placement, reload, sharing, export and errors.
-2. **Primer3:** typed target/product-size/temperature constraints; explicit parameter
-   directory; Boulder-IO serialization and parsing; left/right primer coordinates,
-   sequences, Tm, GC, penalties and explanations. Distinguish no acceptable primers
-   from tool failure. Test right-primer strand and coordinate conversion. Run designs
-   asynchronously initially; add a measured small-input synchronous path only if useful.
+2. **Primer3: initial scope complete.** Typed target/product-size/temperature constraints,
+   explicit parameter directory, Boulder-IO serialization/parsing and asynchronous
+   designs are implemented. Results include left/right primers, optional internal
+   probes, coordinates, sequences, Tm, GC, penalties and explanations. Tests distinguish
+   no acceptable primers from failures and verify right-primer strand/coordinates.
    Primer selection is not a substitute for genome-wide specificity checking.
 3. **Sequence logos: initial scope complete.** Java statistics and Svelte SVG replace
    WebLogo. Frequency/information modes, coverage, SVG export, printing and persistence
    are implemented. Advanced background models, corrections and confidence intervals
    remain separate enhancements, not blockers for external-tool packaging.
-4. **Trees:** integrate the validated FastTree candidate with explicit DNA/protein model
-   defaults, input limits and Newick parsing. Preserve leaf IDs, branch lengths and
-   support metadata; render safely in Svelte. Handle identical sequences, unresolved
-   nodes and insufficient usable columns. Do not label an arbitrary root as biological
-   rooting or local support as bootstrap confidence. Add a Newick download.
+4. **Guide trees: initial scope complete.** T-Coffee guide trees are parsed and rendered
+   as SVG, with Newick export, source mapping and persistence. This supersedes the
+   initial FastTree implementation proposal for this wave. Model-based phylogenetic
+   inference would be a separate future tool with explicit model/support semantics.
 
-The current workspace persists sequences, alignments and native logos. Before declaring
-another tool complete, add typed primer-design/tree entries to the DTOs, frontend
-store/viewers, validation, entry order, browser autosave, sharing and print/export rules.
+The current workspace persists sequences, alignments, native logos, primer designs
+and guide trees through typed DTOs, validation, explicit entry order, autosave and sharing.
 Version the workspace payload and explicitly migrate current drafts/shares, rather
 than silently dropping them when adding new entry types. Persist provenance and options.
 
@@ -715,9 +784,9 @@ startup or during ordinary analysis; PostgreSQL shares/artifacts survive recreat
   budget, retention policy and licensing review are recorded. No claim of ARM support
   or numerical equivalence across tool upgrades without real tests.
 
-**Next implementation slice:** Primer3 request/result contracts and design UI, reusing
-the job runner. Agree target selection, product-size range, primer length/Tm and optional
-overhang behavior first. Native logos and the initial T-Coffee workflow are implemented.
+**Next implementation slice:** address the public-release hardening gates and expand
+interaction coverage. Model-based phylogenetic inference remains optional future work;
+the requested T-Coffee guide-tree workflow is implemented.
 
 ## Migration Phase Summary
 

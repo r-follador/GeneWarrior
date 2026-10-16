@@ -14,6 +14,7 @@ public record ProjectDto(
         @Valid List<AlignmentDto> alignments,
         @Valid List<SequenceLogoDto> logos,
         @Valid @JsonInclude(JsonInclude.Include.NON_EMPTY) List<PrimerDesignDto> primerDesigns,
+        @Valid @JsonInclude(JsonInclude.Include.NON_EMPTY) List<GuideTreeDto> trees,
         List<String> entryOrder,
         Instant createdAt,
         Instant updatedAt
@@ -23,11 +24,17 @@ public record ProjectDto(
         alignments = alignments == null ? List.of() : List.copyOf(alignments);
         logos = logos == null ? List.of() : List.copyOf(logos);
         primerDesigns = primerDesigns == null ? List.of() : List.copyOf(primerDesigns);
+        trees = trees == null ? List.of() : List.copyOf(trees);
         entryOrder = entryOrder == null ? List.of() : List.copyOf(entryOrder);
     }
 
     public ProjectDto(String id, String name, List<SequenceDto> sequences, List<AlignmentDto> alignments,
                       List<SequenceLogoDto> logos, List<String> entryOrder, Instant createdAt, Instant updatedAt) {
-        this(id, name, sequences, alignments, logos, List.of(), entryOrder, createdAt, updatedAt);
+        this(id, name, sequences, alignments, logos, List.of(), List.of(), entryOrder, createdAt, updatedAt);
+    }
+
+    public ProjectDto(String id, String name, List<SequenceDto> sequences, List<AlignmentDto> alignments,
+                      List<SequenceLogoDto> logos, List<PrimerDesignDto> primerDesigns, List<String> entryOrder, Instant createdAt, Instant updatedAt) {
+        this(id, name, sequences, alignments, logos, primerDesigns, List.of(), entryOrder, createdAt, updatedAt);
     }
 }
